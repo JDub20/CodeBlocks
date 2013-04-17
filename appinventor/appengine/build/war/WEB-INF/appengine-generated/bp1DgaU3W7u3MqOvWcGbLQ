@@ -1,0 +1,76 @@
+<xml>
+  <block type="lists_create_with" inline="false" x="256" y="9">
+    <mutation items="3"></mutation>
+    <comment pinned="false" h="241" w="416">(call-yail-primitive make-yail-list (*list-for-runtime* "dfff" (call-yail-primitive make-yail-list (*list-for-runtime* 4 "dfdgfdg" #t (call-yail-primitive expt (*list-for-runtime* 5 2) '(number number) "expt") ) '(any any any any ) "make a list") #t ) '(any any any ) "make a list")</comment>
+    <value name="ADD0">
+      <block type="text">
+        <title name="TEXT">dfff</title>
+      </block>
+    </value>
+    <value name="ADD1">
+      <block type="lists_create_with" inline="false">
+        <mutation items="4"></mutation>
+        <value name="ADD0">
+          <block type="math_number">
+            <title name="NUM">4</title>
+          </block>
+        </value>
+        <value name="ADD1">
+          <block type="text">
+            <title name="TEXT">dfdgfdg</title>
+          </block>
+        </value>
+        <value name="ADD2">
+          <block type="logic_boolean">
+            <title name="BOOL">TRUE</title>
+          </block>
+        </value>
+        <value name="ADD3">
+          <block type="math_power" inline="true">
+            <value name="A">
+              <block type="math_number">
+                <title name="NUM">5</title>
+              </block>
+            </value>
+            <value name="B">
+              <block type="math_number">
+                <title name="NUM">2</title>
+              </block>
+            </value>
+          </block>
+        </value>
+      </block>
+    </value>
+    <value name="ADD2">
+      <block type="logic_boolean">
+        <title name="BOOL">TRUE</title>
+      </block>
+    </value>
+  </block>
+  <block type="text_join" inline="false" x="-407" y="158">
+    <mutation items="2"></mutation>
+    <value name="ADD0">
+      <block type="text">
+        <title name="TEXT">a</title>
+      </block>
+    </value>
+    <value name="ADD1">
+      <block type="text">
+        <title name="TEXT">b</title>
+      </block>
+    </value>
+  </block>
+  <block type="math_add" inline="true" x="455" y="285">
+    <mutation items="2"></mutation>
+    <value name="NUM0">
+      <block type="math_number">
+        <title name="NUM">0</title>
+      </block>
+    </value>
+    <value name="NUM1">
+      <block type="math_number">
+        <title name="NUM">0</title>
+      </block>
+    </value>
+  </block>
+</xml>
