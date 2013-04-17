@@ -132,6 +132,36 @@ Blockly.Block.prototype.customContextMenu = function(options) {
     myBlock.setCommentText(yailText);
   };
   options.push(yailOption);
+
+  var pythonOption = {enabled: true};
+  pythonOption.text = "Generate Python";
+  var myBlock = this;
+  pythonOption.callback = function() {
+    var pythonText;
+    //Blockly.Python.blockToCode returns a string if the block is a statement
+    //and an array if the block is a value
+    var pythonTextOrArray = Blockly.Python.blockToCode(myBlock);
+    if(pythonTextOrArray instanceof Array){
+      pythonText = pythonTextOrArray[0];
+    } else {
+      pythonText = pythonTextOrArray;
+    }
+    myBlock.setCommentText(pythonText);
+  };
+
+  options.push(pythonOption);
+
+  var xmlOption = {enabled: true};
+  xmlOption.text = "Generate Xml";
+  var myBlock = this;
+  xmlOption.callback = function() {
+    myBlockXml = Blockly.Xml.blockToDom_(myBlock);
+    myBlockXmlText = Blockly.Xml.domToText(myBlockXml);
+    myBlock.setCommentText(myBlockXmlText);
+  };
+  options.push(xmlOption);
+
+
   if(myBlock.procCustomContextMenu){
     myBlock.procCustomContextMenu(options);
   }
