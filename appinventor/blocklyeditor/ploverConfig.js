@@ -3,6 +3,21 @@
   "id": "blockly-config",
   "paths": [],
   "inputs": [//'testalert.js'
+
+    //skulpt
+    "./skulpt/skulpt.js",
+
+    //jquery
+    "./jquery/jquery-1.9.1.js",
+    "./jquery/jquery.ui.core.js",
+    "./jquery/jquery.ui.widget.js",
+    "./jquery/jquery.ui.mouse.js",
+    "./jquery/jquery.ui.draggable.js",
+    "./jquery/jquery.ui.position.js",
+    "./jquery/jquery.ui.resizable.js",
+    "./jquery/jquery.ui.button.js",
+    "./jquery/jquery.ui.dialog.js",
+
     //blockly.js must come first
     '../lib/blockly/src/core/blockly.js',
 
@@ -92,6 +107,7 @@
     "./src/generators/python/text.js",
     "./src/generators/python/variables.js",
     "./src/generators/python/procedures.js",
+
 
     // Repl
     "./src/replmgr.js"

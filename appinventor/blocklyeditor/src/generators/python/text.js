@@ -113,6 +113,14 @@ Blockly.Python.text_indexOf = function() {
   return [code, Blockly.Python.ORDER_MEMBER];
 };
 
+Blockly.Python.text_starts_at = function() {
+  // String starts at
+  var argument0 = Blockly.Python.valueToCode(this, 'TEXT', Blockly.Python.ORDER_NONE) || "\"\"";
+  var argument1 = Blockly.Python.valueToCode(this, 'PIECE', Blockly.Python.ORDER_NONE) || "\"\"";
+  var code = argument0 + ".find(" + argument1 + ")"
+  return [ code, Blockly.Python.ORDER_ATOMIC ];
+};
+
 Blockly.Python.text_charAt = function() {
   // Get letter at index.
   var argument0 = Blockly.Python.valueToCode(this, 'AT',
@@ -133,7 +141,7 @@ Blockly.Python.text_charAt = function() {
 
 Blockly.Python.text_changeCase = function() {
   // Change capitalization.
-  var mode = this.getTitleValue('CASE');
+  var mode = this.getTitleValue('OP');
   var operator = Blockly.Python.text_changeCase.OPERATORS[mode];
   var argument0 = Blockly.Python.valueToCode(this, 'TEXT',
       Blockly.Python.ORDER_MEMBER) || '\'\'';
@@ -142,26 +150,25 @@ Blockly.Python.text_changeCase = function() {
 };
 
 Blockly.Python.text_changeCase.OPERATORS = {
-  UPPERCASE: '.upper()',
-  LOWERCASE: '.lower()',
-  TITLECASE: '.title()'
+  UPCASE: '.upper()',
+  DOWNCASE: '.lower()'
 };
 
-Blockly.Python.text_trim = function() {
-  // Trim spaces.
-  var mode = this.getTitleValue('MODE');
-  var operator = Blockly.Python.text_trim.OPERATORS[mode];
-  var argument0 = Blockly.Python.valueToCode(this, 'TEXT',
-      Blockly.Python.ORDER_MEMBER) || '\'\'';
-  var code = argument0 + operator;
-  return [code, Blockly.Python.ORDER_MEMBER];
-};
+// Blockly.Python.text_trim = function() {
+//   // Trim spaces.
+//   var mode = this.getTitleValue('OP');
+//   var operator = Blockly.Python.text_trim.OPERATORS[mode];
+//   var argument0 = Blockly.Python.valueToCode(this, 'TEXT',
+//       Blockly.Python.ORDER_MEMBER) || '\'\'';
+//   var code = argument0 + operator;
+//   return [code, Blockly.Python.ORDER_MEMBER];
+// };
 
-Blockly.Python.text_trim.OPERATORS = {
-  LEFT: '.lstrip()',
-  RIGHT: '.rstrip()',
-  BOTH: '.strip()'
-};
+// Blockly.Python.text_trim.OPERATORS = {
+//   LEFT: '.lstrip()',
+//   RIGHT: '.rstrip()',
+//   BOTH: '.strip()'
+// };
 
 Blockly.Python.text_print = function() {
   // Print statement.
@@ -191,4 +198,64 @@ Blockly.Python.text_prompt = function() {
     code = 'float(' + code + ')';
   }
   return [code, Blockly.Python.ORDER_FUNCTION_CALL];
+};
+
+
+Blockly.Python.text_compare = function() {
+  // Basic compare operators
+  var mode = this.getTitleValue('OP');
+  var prim = Blockly.Python.text_compare.OPERATORS[mode];
+  var operator = prim[0];
+  var order = prim[1];
+  var argument0 = Blockly.Python.valueToCode(this, 'TEXT1', order) || "\"\"";
+  var argument1 = Blockly.Python.valueToCode(this, 'TEXT2', order) || "\"\"";
+  var code = argument0 + operator + argument1
+  return [ code, Blockly.Python.ORDER_ATOMIC ];
+};
+
+Blockly.Python.text_compare.OPERATORS = {
+  LT: ['<', Blockly.Python.ORDER_NONE],
+  GT: ['>', Blockly.Python.ORDER_NONE],
+  EQUAL: ['==', Blockly.Python.ORDER_NONE]
+}
+
+
+Blockly.Python.text_trim = function() {
+  // String trim
+  var argument = Blockly.Python.valueToCode(this, 'TEXT', Blockly.Python.ORDER_NONE) || "\"\"";
+  var code = argument + ".strip()"
+  return [ code, Blockly.Python.ORDER_ATOMIC ];
+};
+
+Blockly.Python.text_contains = function() {
+  // String contains.
+  var argument0 = Blockly.Python.valueToCode(this, 'TEXT', Blockly.Python.ORDER_NONE) || "\"\"";
+  var argument1 = Blockly.Python.valueToCode(this, 'PIECE', Blockly.Python.ORDER_NONE) || "\"\"";
+  var code = argument0 +" in " + argument1;
+  return [ code, Blockly.Python.ORDER_ATOMIC ];
+};
+
+Blockly.Python.text_split_at_spaces = function() {
+  // split at spaces
+  var argument = Blockly.Python.valueToCode(this, 'TEXT', Blockly.Python.ORDER_NONE) || "\"\"";
+  var code = argument + ".split()";
+  return [ code, Blockly.Python.ORDER_ATOMIC ];
+};
+
+Blockly.Python.text_segment = function() {
+  // Create string segment
+  var argument0 = Blockly.Python.valueToCode(this, 'TEXT', Blockly.Python.ORDER_NONE) || "\"\"";
+  var argument1 = Blockly.Python.valueToCode(this, 'START', Blockly.Python.ORDER_NONE) || 1;
+  var argument2 = Blockly.Python.valueToCode(this, 'LENGTH', Blockly.Python.ORDER_NONE) || 1;
+  var code = argument0 +"[" + argument1 + ":" + argument2 + "]"
+  return [ code, Blockly.Python.ORDER_ATOMIC ]; 
+};
+
+Blockly.Python.text_replace_all = function() {
+  // String replace with segment
+  var argument0 = Blockly.Python.valueToCode(this, 'TEXT', Blockly.Python.ORDER_NONE) || "\"\"";
+  var argument1 = Blockly.Python.valueToCode(this, 'SEGMENT', Blockly.Python.ORDER_NONE) || "\"\"";
+  var argument2 = Blockly.Python.valueToCode(this, 'REPLACEMENT', Blockly.Python.ORDER_NONE) || "\"\"";
+  var code = argument0 + ".replace(" + argument1 + ", " + argument2 + ")"
+  return [ code, Blockly.Python.ORDER_ATOMIC ];
 };

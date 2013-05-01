@@ -54,11 +54,19 @@ Blockly.Python.controls_whileUntil = function() {
   var branch0 = Blockly.Python.statementToCode(this, 'DO') || '  pass\n';
   if (this.getTitleValue('MODE') == 'UNTIL') {
     if (!argument0.match(/^\w+$/)) {
-      argument0 = '(' + argument0 + ')';
+      argument0 = '(' + argument0 + ')';branch0
     }
     argument0 = 'not ' + argument0;
   }
   return 'while ' + argument0 + ':\n' + branch0;
+};
+
+Blockly.Python.controls_while = function() {
+  // Do while/until loop.
+  var test = Blockly.Python.valueToCode(this, 'TEST', Blockly.Python.ORDER_NONE) || "False";
+  var branch0 = Blockly.Python.statementToCode(this, 'DO') || '  pass\n';
+
+  return 'while ' + test + ':\n' + branch0;
 };
 
 Blockly.Python.controls_for = function() {
@@ -116,10 +124,38 @@ Blockly.Python.controls_for = function() {
   return code;
 };
 
+Blockly.Python.controls_choose = function() {
+  // Choose.
+  var test =  Blockly.Python.valueToCode(this, 'TEST', Blockly.Python.ORDER_NONE) || "False";
+  var thenReturn = Blockly.Python.valueToCode(this, 'THENRETURN', Blockly.Python.ORDER_NONE) || "False";
+  var elseReturn = Blockly.Python.valueToCode(this, 'ELSERETURN', Blockly.Python.ORDER_NONE) || "False";
+  var code = thenReturn + " if " + test + " else " + elseReturn;
+  return [code,Blockly.Python.ORDER_ATOMIC];
+};
+
+Blockly.Python.controls_forRange = function() {
+  // For loop.
+  var variable0 = this.getTitleValue('VAR');
+  var argument0 = Blockly.Python.valueToCode(this, 'START',
+      Blockly.Python.ORDER_NONE) || '0';
+  var argument1 = Blockly.Python.valueToCode(this, 'END',
+      Blockly.Python.ORDER_NONE) || '0';
+  var argument2 = Blockly.Python.valueToCode(this, 'STEP',
+      Blockly.Python.ORDER_NONE) || '0';
+  var branch0 = Blockly.Python.statementToCode(this, 'DO') || '  pass\n';
+
+  var code = '';
+  var range = argument0 + ', ' + argument1 + ', ' + argument2;
+  
+  range = 'range(' + range + ')';
+  code += 'for ' + variable0 + ' in ' + range + ':\n' +
+      branch0;
+  return code;
+};
+
 Blockly.Python.controls_forEach = function() {
   // For each loop.
-  var variable0 = Blockly.Python.variableDB_.getName(
-      this.getTitleValue('VAR'), Blockly.Variables.NAME_TYPE);
+  var variable0 = this.getTitleValue('VAR');
   var argument0 = Blockly.Python.valueToCode(this, 'LIST',
       Blockly.Python.ORDER_RELATIONAL) || '[]';
   var branch0 = Blockly.Python.statementToCode(this, 'DO') || '  pass\n';
@@ -136,4 +172,18 @@ Blockly.Python.controls_flow_statements = function() {
       return 'continue\n';
   }
   throw 'Unknown flow statement.';
+};
+
+Blockly.Python.controls_do_then_return = function() {
+  var stm = Blockly.Python.statementToCode(this, 'STM', Blockly.Python.ORDER_NONE) || "False";
+  var value = Blockly.Python.valueToCode(this, 'VALUE', Blockly.Python.ORDER_NONE) || "False";
+  var code = "";
+
+  if (value.indexOf("return") > -1) {
+    code += stm+ "\n" + value;
+  } else {
+    code = stm+ "\n" + "  return " + value;
+  }
+
+  return [code, Blockly.Python.ORDER_ATOMIC];
 };

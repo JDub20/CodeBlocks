@@ -27,8 +27,7 @@ Blockly.Python = Blockly.Generator.get('Python');
 
 Blockly.Python.logic_compare = function() {
   // Comparison operator.
-  var mode = this.getTitleValue('OP');
-  var operator = Blockly.Python.logic_compare.OPERATORS[mode];
+  var operator = "==";
   var order = Blockly.Python.ORDER_RELATIONAL;
   var argument0 = Blockly.Python.valueToCode(this, 'A', order) || '0';
   var argument1 = Blockly.Python.valueToCode(this, 'B', order) || '0';

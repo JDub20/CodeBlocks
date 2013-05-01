@@ -6,6 +6,7 @@
     <script type="text/javascript" src="closure-library-20120710-r2029/closure/goog/base.js"></script>
     <link type="text/css" rel="stylesheet" href="media/blockly.css">
     <link type="text/css" rel="stylesheet" href="closure-library-20120710-r2029/closure/goog/css/dialog.css">
+    <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
     <script type="text/javascript" src="blockly-all.js"></script>
     <style>
       html, body {
@@ -38,8 +39,11 @@
         window.parent.Blocklies[formName] = Blockly;
         window.parent.Blocklies[formName].ReplState = window.parent.ReplState;
         window.parent.BlocklyPanel_initBlocksArea(formName);
+        Blockly.Python.init();
       }
     </script>
   </head>
-<body onload="init()">  </body>
+<body onload="init()">  
+<div id="dialog-modal" title="Basic modal dialog" style="display: none;"></div>
+</body>
 </html>

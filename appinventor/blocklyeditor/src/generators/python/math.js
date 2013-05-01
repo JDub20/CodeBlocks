@@ -41,22 +41,21 @@ Blockly.Python.math_compare = function() {
   var mode = this.getTitleValue('OP');
   var prim = Blockly.Python.math_compare.OPERATORS[mode];
   var operator1 = prim[0];
-  var operator2 = prim[1];
-  var order = prim[2];
+  var order = prim[1];
   var argument0 = Blockly.Python.valueToCode(this, 'A', order) || 0;
   var argument1 = Blockly.Python.valueToCode(this, 'B', order) || 0;
-  var code = argument0 + operator2 + argument1; 
+  var code = argument0 + " " + operator1 + " " + argument1; 
 
   return [code, Blockly.Python.ORDER_ATOMIC];
 };
 
 Blockly.Python.math_compare.OPERATORS = {
-  EQ: ['==', ' == ', Blockly.Python.ORDER_NONE],
-  NEQ: ['!=', ' != ', Blockly.Python.ORDER_NONE],
-  LT: ['<', ' < ', Blockly.Python.ORDER_NONE],
-  LTE: ['<=', ' <= ', Blockly.Python.ORDER_NONE],
-  GT: ['>', ' > ', Blockly.Python.ORDER_NONE],
-  GTE: ['>=', ' >= ', Blockly.Python.ORDER_NONE]
+  EQ: ['==', Blockly.Python.ORDER_NONE],
+  NEQ: ['!=', Blockly.Python.ORDER_NONE],
+  LT: ['<', Blockly.Python.ORDER_NONE],
+  LTE: ['<=', Blockly.Python.ORDER_NONE],
+  GT: ['>', Blockly.Python.ORDER_NONE],
+  GTE: ['>=', Blockly.Python.ORDER_NONE]
 };
 
 
@@ -115,9 +114,9 @@ Blockly.Python.math_arithmetic_list = function(mode,block) {
   for(var i=0;i<block.itemCount_;i++) {
     var argument = Blockly.Python.valueToCode(block, 'NUM' + i, order) || 0;
 
-    // if ( block.childBlocks_[i].childBlocks_.length > 0 ) {
-    //   argument = "( " + argument + " )"
-    // }
+    if ( block.childBlocks_[i].childBlocks_.length > 0 ) {
+      argument = "( " + argument + " )"
+    }
 
     code += argument;
     if (i != block.itemCount_ - 1) {
@@ -230,8 +229,18 @@ Blockly.Python.math_trig = Blockly.Python.math_single;
 Blockly.Python.math_on_list = function() {
   // Math functions for lists.
   var func = this.getTitleValue('OP');
-  var list = Blockly.Python.valueToCode(this, 'LIST',
-      Blockly.Python.ORDER_NONE) || '[]';
+  var order =  Blockly.Python.ORDER_NONE;
+  var list = "["
+
+  for(var i=0;i<this.itemCount_;i++) {
+    list += (Blockly.Python.valueToCode(this, 'NUM' + i, order) || 0);
+    if (i < this.itemCount_ - 1) {
+      list += ", "
+    }
+  }
+
+  list += "]"
+
   var code;
   switch (func) {
     case 'SUM':

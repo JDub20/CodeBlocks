@@ -31,7 +31,7 @@ Blockly.Python.procedures_defreturn = function() {
   var globals = Blockly.Variables.allVariables(this);
   for (var i = globals.length - 1; i >= 0; i--) {
     var varName = globals[i];
-    if (this.arguments_.indexOf(varName) == -1) {
+    if (Blockly.unprefixName(varName)[0] == "global") {
       globals[i] = Blockly.Python.variableDB_.getName(varName,
           Blockly.Variables.NAME_TYPE);
     } else {
@@ -47,7 +47,11 @@ Blockly.Python.procedures_defreturn = function() {
   var returnValue = Blockly.Python.valueToCode(this, 'RETURN',
       Blockly.Python.ORDER_NONE) || '';
   if (returnValue) {
-    returnValue = '  return ' + returnValue + '\n';
+    if (returnValue.indexOf("return") > -1) {
+      returnValue = "  " + returnValue + '\n';
+    } else {
+      returnValue = '  return ' + returnValue + '\n';
+    }
   } else if (!branch) {
     branch = '  pass';
   }
@@ -60,7 +64,7 @@ Blockly.Python.procedures_defreturn = function() {
       globals + branch + returnValue;
   code = Blockly.Python.scrub_(this, code);
   Blockly.Python.definitions_[funcName] = code;
-  return null;
+  return code;
 };
 
 // Defining a procedure without a return value uses the same generator as
@@ -70,7 +74,7 @@ Blockly.Python.procedures_defnoreturn =
 
 Blockly.Python.procedures_callreturn = function() {
   // Call a procedure with a return value.
-  var funcName = Blockly.Python.variableDB_.getName(this.getTitleValue('NAME'),
+  var funcName = Blockly.Python.variableDB_.getName(this.getTitleValue('PROCNAME'),
       Blockly.Procedures.NAME_TYPE);
   var args = [];
   for (var x = 0; x < this.arguments_.length; x++) {
@@ -83,7 +87,7 @@ Blockly.Python.procedures_callreturn = function() {
 
 Blockly.Python.procedures_callnoreturn = function() {
   // Call a procedure with no return value.
-  var funcName = Blockly.Python.variableDB_.getName(this.getTitleValue('NAME'),
+  var funcName = Blockly.Python.variableDB_.getName(this.getTitleValue('PROCNAME'),
       Blockly.Procedures.NAME_TYPE);
   var args = [];
   for (var x = 0; x < this.arguments_.length; x++) {
@@ -97,7 +101,7 @@ Blockly.Python.procedures_callnoreturn = function() {
 Blockly.Python.procedures_return = function() {
   // Return value in a procedure
   var value = Blockly.Python.valueToCode(this, 'VALUE', Blockly.Python.ORDER_ATOMIC);
-  var code = "return "+value+";\n";
+  var code = "  return "+value+";\n";
   return code;
 };
 
@@ -106,3 +110,8 @@ Blockly.Python.procedures_null = function() {
   var code = 'None';
   return [code ,Blockly.Python.ORDER_NONE];
 };
+
+//call the do return in control category
+Blockly.Python.procedures_do_then_return = function() {
+  return Blockly.Python.controls_do_then_return.call(this);
+}

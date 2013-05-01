@@ -30,6 +30,8 @@ Blockly.Python.lists_create_empty = function() {
   return ['[]', Blockly.Python.ORDER_ATOMIC];
 };
 
+Blockly.Python.emptyListCode = Blockly.Python.lists_create_empty[0];
+
 Blockly.Python.lists_create_with = function() {
   // Create a list with any number of elements of any type.
   var code = new Array(this.itemCount_);
@@ -52,20 +54,22 @@ Blockly.Python.lists_repeat = function() {
 };
 
 Blockly.Python.lists_length = function() {
-  // Testing the length of a list is the same as for a string.
-  return Blockly.Python.text_length.call(this);
+  var argument0 = Blockly.Python.valueToCode(this, 'LIST', Blockly.Python.ORDER_NONE) || Blockly.Python.emptyListCode;
+  code = "len(" + argument0 + ")";
+  return [ code, Blockly.Python.ORDER_ATOMIC];
 };
 
-Blockly.Python.lists_isEmpty = function() {
-  // Testing a list for being empty is the same as for a string.
-  return Blockly.Python.text_isEmpty.call(this);
+Blockly.Python.lists_is_empty = function() {
+  var argument0 = Blockly.Python.valueToCode(this, 'LIST', Blockly.Python.ORDER_NONE) || Blockly.Python.emptyListCode;
+  code = " not len(" + argument0 + ")";
+  return [ code, Blockly.Python.ORDER_ATOMIC];
 };
 
 Blockly.Python.lists_indexOf = function() {
   // Searching a list for a value is NOT the same as search for a substring.
-  var argument0 = Blockly.Python.valueToCode(this, 'FIND',
+  var argument0 = Blockly.Python.valueToCode(this, 'LIST',
       Blockly.Python.ORDER_NONE) || '[]';
-  var argument1 = Blockly.Python.valueToCode(this, 'VALUE',
+  var argument1 = Blockly.Python.valueToCode(this, 'ITEM',
       Blockly.Python.ORDER_MEMBER) || '\'\'';
   var code;
   if (this.getTitleValue('END') == 'FIRST') {
@@ -97,9 +101,14 @@ Blockly.Python.lists_indexOf = function() {
       Blockly.Python.definitions_['last_index'] = func.join('\n');
     }
     code = Blockly.Python.lists_indexOf.last_index + '(' +
-        argument1 + ', ' + argument0 + ')';
+        argument1 + ', ' + argument0 + ')'; 
     return [code, Blockly.Python.ORDER_MEMBER];
   }
+};
+
+Blockly.Python.lists_position_in = function() {
+   return Blockly.Python.lists_indexOf.call(this);
+
 };
 
 Blockly.Python.lists_getIndex = function() {
@@ -125,4 +134,118 @@ Blockly.Python.lists_setIndex = function() {
   }
   var code = argument1 + '[' + argument0 + '] = ' + argument2 + '\n';
   return code;
+};
+
+
+
+Blockly.Python.lists_add_items = function() {
+  // Add items to list.
+  // TODO: (Andrew) Make this handle multiple items.
+  var argument0 = Blockly.Python.valueToCode(this, 'LIST', Blockly.Python.ORDER_NONE) || Blockly.Python.emptyListCode;
+  var argument1 = Blockly.Python.valueToCode(this, 'ITEM', Blockly.Python.ORDER_NONE) || 1;
+  var code = argument0 + ".append("
+
+  if (this.itemCount_ == 1) {
+    code +=  Blockly.Python.valueToCode(this, 'ITEM0', Blockly.Python.ORDER_NONE) || "None";
+    code += ")";
+    return code;
+  }
+
+  else {
+    code += "["
+
+    for(var i=0;i<this.itemCount_;i++) {
+      var argument = Blockly.Python.valueToCode(this, 'ITEM' + i, Blockly.Python.ORDER_NONE) || Blockly.Python.YAIL_FALSE;
+      code += argument;
+
+      //no the last item
+      if (i < this.itemCount_ - 1) {
+        code += ", ";
+      }
+    }
+
+    code +="]";
+
+    return code;
+  }
+
+
+};
+
+Blockly.Python.lists_is_in = function() {
+  // Is in list?.
+  var argument0 = Blockly.Python.valueToCode(this, 'ITEM', Blockly.Python.ORDER_NONE) || "NONE";
+  var argument1 = Blockly.Python.valueToCode(this, 'LIST', Blockly.Python.ORDER_NONE) || Blockly.Python.emptyListCode;
+  code = argument0 + " in " + argument1;
+  return [ code, Blockly.Python.ORDER_ATOMIC ];
+};
+
+
+Blockly.Python.lists_pick_random_item = function() {
+  // Pick random item
+  var argument0 = Blockly.Python.valueToCode(this, 'LIST', Blockly.Python.ORDER_NONE) || Blockly.Python.emptyListCode;
+  Blockly.Python.definitions_['import_random'] = 'import random';
+  code = 'random.choice(' + argument0 + ')';
+  return [ code, Blockly.Python.ORDER_ATOMIC ];
+};
+
+Blockly.Python.lists_select_item = function() {
+  // Select from list an item.
+
+  var argument0 = Blockly.Python.valueToCode(this, 'LIST', Blockly.Python.ORDER_NONE) || Blockly.Python.emptyListCode;
+  var argument1 = Blockly.Python.valueToCode(this, 'NUM', Blockly.Python.ORDER_NONE) || 1;
+
+  var code = argument0 + "[" + argument1 + "]"; 
+  return [ code, Blockly.Python.ORDER_ATOMIC ];
+};
+
+Blockly.Python.lists_insert_item = function() {
+  // Insert Item in list.
+  var argument0 = Blockly.Python.valueToCode(this, 'LIST', Blockly.Python.ORDER_NONE) || Blockly.Python.emptyListCode;
+  var argument1 = Blockly.Python.valueToCode(this, 'INDEX', Blockly.Python.ORDER_NONE) || 1;
+  var argument2 = Blockly.Python.valueToCode(this, 'ITEM', Blockly.Python.ORDER_NONE) || Blockly.Python.YAIL_FALSE;
+  var code = argument0 +".insert(" + argument1 + ", " + argument2 + ")";
+  return code;
+};
+
+Blockly.Python.lists_replace_item = function() {
+  // Replace Item in list.
+  var argument0 = Blockly.Python.valueToCode(this, 'LIST', Blockly.Python.ORDER_NONE) || Blockly.Python.emptyListCode;
+  var argument1 = Blockly.Python.valueToCode(this, 'NUM', Blockly.Python.ORDER_NONE) || 1;
+  var argument2 = Blockly.Python.valueToCode(this, 'ITEM', Blockly.Python.ORDER_NONE) || Blockly.Python.YAIL_FALSE;
+  var code = argument0 + "[" + argument1 + "] = " + argument2; 
+  return code;
+};
+
+Blockly.Python.lists_remove_item = function() {
+  // Remove Item in list.
+  var argument0 = Blockly.Python.valueToCode(this, 'LIST', Blockly.Python.ORDER_NONE) || Blockly.Python.emptyListCode;
+  var argument1 = Blockly.Python.valueToCode(this, 'INDEX', Blockly.Python.ORDER_NONE) || 1;
+  var code =  argument0 + ".pop(" + argument1 +")"
+
+  return code;
+};
+
+Blockly.Python.lists_append_list = function() {
+  // Append to list.
+  var argument0 = Blockly.Python.valueToCode(this, 'LIST0', Blockly.Python.ORDER_NONE) || Blockly.Python.emptyListCode;
+  var argument1 = Blockly.Python.valueToCode(this, 'LIST1', Blockly.Python.ORDER_NONE) || Blockly.Python.emptyListCode;
+  var code = argument0 +".extend(" + argument1 + ")"
+  return code;
+};
+
+Blockly.Python.lists_copy = function() {
+  // Make a copy of list.
+  var argument0 = Blockly.Python.valueToCode(this, 'LIST', Blockly.Python.ORDER_NONE) || Blockly.Python.emptyListCode;
+  var code = "list(" + argument0 + ")";
+  return [ code, Blockly.Python.ORDER_ATOMIC ];
+};
+
+
+Blockly.Python.lists_is_list = function() {
+  // Create an empty list.
+  // TODO:(Andrew) test whether thing is var or text or number etc...
+  var argument0 = Blockly.Python.valueToCode(this, 'ITEM', Blockly.Python.ORDER_NONE) || "False";
+  var code = "type(" + argument0 + ") == list" 
+  return [ code, Blockly.Python.ORDER_ATOMIC ];
 };

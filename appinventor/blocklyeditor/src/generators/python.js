@@ -88,13 +88,13 @@ Blockly.Python.init = function() {
       Blockly.Python.variableDB_.reset();
     }
 
-    var defvars = [];
-    var variables = Blockly.Variables.allVariables();
-    for (var x = 0; x < variables.length; x++) {
-      defvars[x] = Blockly.Python.variableDB_.getDistinctName(variables[x],
-          Blockly.Variables.NAME_TYPE) + ' = None';
-    }
-    Blockly.Python.definitions_['variables'] = defvars.join('\n');
+    // var defvars = [];
+    // var variables = Blockly.Variables.allVariables();
+    // for (var x = 0; x < variables.length; x++) {
+    //   defvars[x] = Blockly.Python.variableDB_.getDistinctName(variables[x],
+    //       Blockly.Variables.NAME_TYPE) + ' = None';
+    // }
+    // Blockly.Python.definitions_['variables'] = defvars.join('\n');
   }
 };
 
@@ -160,28 +160,41 @@ Blockly.Python.scrub_ = function(block, code) {
     return '';
   }
   var commentCode = '';
-  // Only collect comments for blocks that aren't inline.
-  if (!block.outputConnection || !block.outputConnection.targetConnection) {
-    // Collect comment for this block.
-    var comment = block.getCommentText();
-    if (comment) {
-      commentCode += Blockly.Generator.prefixLines(comment, '# ') + '\n';
-    }
-    // Collect comments for all value arguments.
-    // Don't collect comments for nested statements.
-    for (var x = 0; x < block.inputList.length; x++) {
-      if (block.inputList[x].type == Blockly.INPUT_VALUE) {
-        var childBlock = block.inputList[x].connection.targetBlock();
-        if (childBlock) {
-          var comment = Blockly.Generator.allNestedComments(childBlock);
-          if (comment) {
-            commentCode += Blockly.Generator.prefixLines(comment, '# ');
-          }
-        }
+  // // Only collect comments for blocks that aren't inline.
+  // if (!block.outputConnection || !block.outputConnection.targetConnection) {
+  //   // Collect comment for this block.
+  //   var comment = block.getCommentText();
+  //   if (comment) {
+  //     commentCode += Blockly.Generator.prefixLines(comment, '# ') + '\n';
+  //   }
+  //   // Collect comments for all value arguments.
+  //   // Don't collect comments for nested statements.
+  //   for (var x = 0; x < block.inputList.length; x++) {
+  //     if (block.inputList[x].type == Blockly.INPUT_VALUE) {
+  //       var childBlock = block.inputList[x].connection.targetBlock();
+  //       if (childBlock) {
+  //         var comment = Blockly.Generator.allNestedComments(childBlock);
+  //         if (comment) {
+  //           commentCode += Blockly.Generator.prefixLines(comment, '# ');
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
+  var tBlock = block.nextConnection && block.nextConnection.targetBlock();
+  var nextCode = this.blockToCode(tBlock);
+
+
+  if (nextCode != "") {
+    var nextXmls = Blockly.Xml.blockToDom_(block).getElementsByTagName("next");
+    if ( nextXmls.length > 0 ) {
+      var nextBlockXml = nextXmls[0].getElementsByTagName("block")[0];
+      var tBlockXml = Blockly.Xml.blockToDom_(tBlock);
+      if (nextBlockXml.isEqualNode(tBlockXml)) {
+        nextCode = "\n" + nextCode;
       }
     }
   }
-  var nextBlock = block.nextConnection && block.nextConnection.targetBlock();
-  var nextCode = this.blockToCode(nextBlock);
+
   return commentCode + code + nextCode;
 };

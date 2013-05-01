@@ -394,27 +394,75 @@ Blockly.showContextMenu_ = function(x, y) {
   helpOption.callback = function() {};
   options.push(helpOption);
 
+
   // Option to get python.
-  var pythonOption = {enabled: false};
+  function runit(text)
+  {
+      try {
+          var info = Sk.importMainWithBody("<stdin>", false, text);
+          var module = info["module"];
+          var xml = info["xml"];
+          xmlStringToWorkspace(xml);
+
+      } catch (e) {
+          // alert(e);
+      }
+  }
+
+  $( "#dialog-modal" ).dialog({
+    width: 600,
+    height: 400,
+    autoOpen: false,
+    resizable: false,
+    modal: true,
+    title: "Python Code",
+    buttons: [{
+      text: "To Block",
+      click: function() { 
+        $(this).dialog("close");
+        console.log($(this).find("textarea").val());
+        runit($(this).find("textarea").val())
+      
+      }
+    }],
+    open: function(event, ui) {
+      var textarea = $('<textarea style="height: 100%; width: 100%"; resize: none; >');
+      $(this).html(textarea);
+    }
+  });
+
+  var xmlStringToWorkspace = function (xmlString) {
+    if (xmlString != null) {
+      xmlStringMod = "<xml>" + xmlString + "</xml>";
+      var oParser = new DOMParser();
+      var dom = oParser.parseFromString(xmlStringMod, 'text/xml');
+      blockXmls = dom.firstChild.childNodes;
+      for (var i = blockXmls.length - 1; i >= 0; i--) {
+        Blockly.Xml.domToBlock_(Blockly.mainWorkspace, blockXmls[i]);
+      };
+    }
+  }
+
+  var pythonOption = {enabled: true };
   pythonOption.text = "Python Code to Block";
-  pythonOption.callback = function() {};
+  pythonOption.callback = function() {
+    $( "#dialog-modal" ).dialog("open");
+  };
   options.push(pythonOption);
 
   // Option to get xml to block
   var xmlOption = {enabled: true};
   xmlOption.text = "Xml String to Block";
+
+
   xmlOption.callback = function() {
     var xmlString = prompt("Please enter code Here",
       '<block type="lists_create_with" inline="false"><mutation items="2"></mutation><value name="ADD0"><block type="text"><title name="TEXT">sdfsdf</title></block></value><value name="ADD1"><block type="math_number"><title name="NUM">0</title></block></value></block>'
       );
-    if (xmlString != null) {
-      xmlStringMod = "<xml>" + xmlString + "</xml>";
-      var oParser = new DOMParser();
-      var dom = oParser.parseFromString(xmlStringMod, 'text/xml');
-      blockXml = dom.firstChild.childNodes[0];
-      Blockly.Xml.domToBlock_(Blockly.mainWorkspace, blockXml);
-    }
+    xmlStringToWorkspace(xmlString);
+
   };
+
   options.push(xmlOption);
 
   Blockly.ContextMenu.show(x, y, options);
