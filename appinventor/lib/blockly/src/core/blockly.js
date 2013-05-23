@@ -402,13 +402,285 @@ Blockly.showContextMenu_ = function(x, y) {
           var info = Sk.importMainWithBody("<stdin>", false, text);
           var module = info["module"];
           var xml = info["xml"];
-          xmlStringToWorkspace(xml);
+		  xmlStringToBlocks(xml);
+          // xmlStringToWorkspace(xml);
 
       } catch (e) {
-          // alert(e);
+          alert(e);
       }
   }
+  
+  var xmlStringToBlocks = function(xmlString) {
+	  var split = xmlString.split("</block><block");
+	  var oParser = new DOMParser();
+	  var length = split.length;
+	  var dom;
+	  for (var i = 0;i < split.length; i++) {
+		  if (i + 1 < length) split[i] += "</block>";
+		  if (i > 0) split[i] = "<block" + split[i];
+		  split[i] = "<xml>" + split[i] + "</xml>";
+		  dom = oParser.parseFromString(split[i], 'text/xml');
+		  blockXmls = dom.firstChild.childNodes;
+		  Blockly.Xml.domToBlock_(Blockly.mainWorkspace, blockXmls[0]);
+	  }
+      // 	  
+      // 
+      // 
+      // 
+      // for (var i = blockXmls.length - 1; i >= 0; i--) {
+      //   
+      // };
+  }
+	// var instancesToCode = function() {
+	//   var code = '';
+	//   var components = { 
+	// 	  'Button1' : { 'typeName' : 'Button' }, 
+	// 	  'Clock1' : { 'typeName' : 'Clock'},
+	// 	  'TextBox1' : { 'typeName' : 'TextBox'},
+	// 	  'Canvas1' : { 'typeName' : 'Canvas'}
+	//   };
+	//   for (var componentName in components) {
+	// 	  code += componentName + ' = ' + 
+	// 	  components[componentName].typeName + '()\n'
+	//   }
+	// 
+	//   console.log("INSTANCES");
+	//   console.log(code);
+	// 
+	//   return code;
+	//   	}
+	var CodeGenerator = function () {	  
+	  	var codeForButtonComponent = function() {
+	  	  var code = '';
+	  	  var ret = '\t\treturn\n';
+	  	  code += 'class Button:\n' + 
+	  	  '\tdef __init__(self):\n' + 
+	  	  '\t\tself.BackgroundColor = "clear"\n' +
+	  	  '\tdef Click(self):\n' + 
+	  	  ret +
+	  	  '\tdef LongClick(self):\n' +
+	  	  ret +
+	  	  '\tdef GotFocus(self):\n' + 
+	  	  ret +
+	  	  '\tdef LostFocus(self):\n' +
+	  	  ret;
+  
+	  	  return code;
+	  	}
+	
+	  	var codeForTextBoxComponent = function() {
+	  		var code = '';
+	  		var t = '\t'
+	  		var t2 = t + t;
+	  		var n = '\n'
+	  		var ret = t2 + 'return' + n;
+	  		var atEvent = t + '@event' + n;
+	  		var atProperty = t + '@property' + n;  
+	  		var atNoReturn = t + '@no_return' + n;
+	  		var init = t + 'def __init__(self):' + n;
+	  		code += 'class TextBox(object):' + n +
+	  		init +
+	  		t2 + 'self.BackgrounColor = "clear"' + n +
+	  		atEvent + 
+	  		t + 'def GotFocus(self):' + n +
+	  		ret +
+	  		atEvent + 
+	  		t + 'def LostFocus(self):' + n +
+	  		ret + 
+	  		atProperty + atNoReturn +
+	  		t + 'def HideKeyboard(self):' + n +
+	  		ret;
+		
+	  		return code;
+	  	}
+	
+	  	var codeForClockComponent = function() {
+	  		var code = '';
+	  		var ret = '\t\treturn\n';
+	  		code += 'class Clock(object):\n' +
+	  		'\tdef __init__(self):\n' +
+	  		'\t\tself.TimerAlwaysFires = True\n' +
+	  		'\t@property\n' + 
+	  		'\tdef AddDays(self, instant, days):\n' + 
+	  		ret
+	  		'\t@property\n' + 
+	  		'\tdef AddHours(self, instant, hours):\n' + 
+	  		ret
+	  		'\t@property\n' + 
+	  		'\tdef AddMinutes(self, instant, minutes):\n' + 
+	  		ret
+	  		'\t@property\n' + 
+	  		'\tdef AddMonths(self, instant, months):\n' + 
+	  		ret
+	  		'\t@property\n' + 
+	  		'\tdef AddSeconds(self, instant, seconds):\n' + 
+	  		ret
+	  		'\t@property\n' + 
+	  		'\tdef AddWeeks(self, instant, weeks):\n' + 
+	  		ret
+	  		'\t@property\n' + 
+	  		'\tdef AddYears(self, instant, years):\n' + 
+	  		ret;
+		
+	  		return code;
+	  	}
+	
+	  	var codeForCanvasComponent = function() {
+	  		var code = '';
+	  		var t = '\t';
+	  		var t2 = t + t;
+	  		var n = '\n'
+	  		var ret = t2 + 'return' + n;
+	  		var atEvent = t + '@event' + n;
+	  		var atProperty = t + '@property' + n;  
+	  		var atNoReturn = t + '@no_return' + n;
+	  		var init = t + 'def __init__(self):' + n;
+	  		var t = '\t'
+	  		var n = '\n'
+	  		code += 'class Canvas(object):\n' +
+	  		init + 
+	  		t2 + 'self.BackgroundColor = "clear"' + n + 
+	  		atEvent + 
+	  		t + 'def Dragged(self, startX, startY, prevX, prevY, currentX, currentY, draggedSprite):' + n +
+	  		ret +
+	  		atEvent + 
+	  		t + 'def Flung(self, x, y, speed, heading, xvel, yvel, flungSprite):' + n +
+	  		ret +
+	  		atEvent + 
+	  		t + 'def TouchDown(self, x, y):' + n +
+	  		ret +
+	  		atEvent + 
+	  		t + 'def TouchUp(self, x, y):' + n +
+	  		ret +
+	  		atEvent + 
+	  		t + 'def Touched(self, x, y):' + n +
+	  		ret +
+	  		atProperty + atNoReturn + 
+	  		t + 'def Clear(self):' + n + 
+	  		ret +
+	  		atProperty + atNoReturn + 
+	  		t + 'def DrawCircle(self, x, y, r):' + n + 
+	  		ret + 
+	  		atProperty + atNoReturn + 
+	  		t + 'def DrawLine(self, x, y, r):' + n + 
+	  		ret +
+	  		atProperty + atNoReturn + 
+	  		t + 'def DrawPoint(self, x, y):' + n + 
+	  		ret +
+	  		atProperty + atNoReturn + 
+	  		t + 'def DrawText(self, text, x, y):' + n + 
+	  		ret +
+	  		atProperty + atNoReturn + 
+	  		t + 'def DrawTextAtAngle(self, text, x, y, angle):' + n + 
+	  		ret +
+	  		atProperty + 
+	  		t + 'def GetBackgroundPixelColor(self, x, y):' + n + 
+	  		ret +
+	  		atProperty + 
+	  		t + 'def GetPixelColor(self, x, y):' + n + 
+	  		ret +
+	  		atProperty + 
+	  		t + 'def Save(self):' + n + 
+	  		ret +
+	  		atProperty + 
+	  		t + 'def SaveAs(self, fileName):' + n + 
+	  		ret +
+	  		atProperty + atNoReturn + 
+	  		t + 'def SetBackgroundPixelColor(self, x, y, color):' + n + 
+	  		ret;
+		
+	  		return code;
+	  	}
+		
+		var codeForTypes = {};
+		codeForTypes['Button'] = codeForButtonComponent();
+		codeForTypes['Clock'] = codeForClockComponent();
+		codeForTypes['TextBox'] = codeForTextBoxComponent();
+		codeForTypes['Canvas'] = codeForCanvasComponent();
 
+		var instancesToCode = function() {
+			  var code = '';
+			  for (var componentName in Blockly.ComponentInstances) {
+				  if (codeForTypes.hasOwnProperty(Blockly.ComponentInstances[componentName].typeName)) {
+					  code += componentName + ' = ' + 
+					  Blockly.ComponentInstances[componentName].typeName + '()\n';
+				  }
+			  }
+  
+			  console.log("INSTANCES");
+			  console.log(code);
+  
+			  return code;
+		}
+	  //   
+	  var classesToCode = function() {
+	  	  var code = '';
+		  var testCode;
+	  	  for (var type in Blockly.ComponentTypes) {
+			  if (codeForTypes.hasOwnProperty(type)) { code += codeForTypes[type]; }
+	  	  }
+  	  
+	  	  console.log("CLASSES");
+	  	  console.log(code);
+  	  
+	  	  return code;
+	  }	
+
+	    this.generate = function() {
+	    	  var code = '';	  
+	    	  code += classesToCode();
+	    	  code += instancesToCode();
+  	  
+	    	  console.log("HISTORY");
+	    	  console.log(code);
+  	  
+	    	  return code;
+	    }
+	}
+	
+  
+	
+  // 
+
+  // 
+  // var codeForButtonComponent = function() {
+  // 	  var code = '';
+  // 	  var ret = '\t\treturn\n';
+  // 	  code += 'class Button:\n' + 
+  // 	  '\tdef __init__(self):\n' + 
+  // 	  '\t\tself.BackgroundColor = "clear"\n' +
+  // 	  '\tdef Click(self):\n' + 
+  // 	  ret +
+  // 	  '\tdef LongClick(self):\n' +
+  // 	  ret +
+  // 	  '\tdef GotFocus(self):\n' + 
+  // 	  ret +
+  // 	  '\tdef LostFocus(self):\n' +
+  // 	  ret;
+  // 	  
+  // 	  return code;
+  // }
+  // 
+  
+	//   var button = 
+	//   	'class Button:
+	//    		def __init__(self):
+	//         	self.BackgroundColor = "clear"
+	//     
+	//     	def Click(self):
+	//         	return
+	//         
+	//     	def LongClick(self):
+	//         	return
+	//     
+	//     	def GotFocus(self):
+	//         	return
+	//     
+	//     	def LostFocus(self):
+	//         	return
+	// '
+	var generator = new CodeGenerator();
+  
   $( "#dialog-modal" ).dialog({
     width: 600,
     height: 400,
@@ -421,7 +693,12 @@ Blockly.showContextMenu_ = function(x, y) {
       click: function() { 
         $(this).dialog("close");
         console.log($(this).find("textarea").val());
-        runit($(this).find("textarea").val())
+		console.log("DIALOG");
+		// console.log(getCodeHistory());
+		var code = generator.generate();
+		console.log("I hope this works");
+		console.log(code);
+        runit(code + $(this).find("textarea").val());
       
       }
     }],
@@ -459,7 +736,7 @@ Blockly.showContextMenu_ = function(x, y) {
     var xmlString = prompt("Please enter code Here",
       '<block type="lists_create_with" inline="false"><mutation items="2"></mutation><value name="ADD0"><block type="text"><title name="TEXT">sdfsdf</title></block></value><value name="ADD1"><block type="math_number"><title name="NUM">0</title></block></value></block>'
       );
-    xmlStringToWorkspace(xmlString);
+    xmlStringToBlocks(xmlString);
 
   };
 
