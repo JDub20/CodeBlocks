@@ -403,8 +403,6 @@ Blockly.showContextMenu_ = function(x, y) {
           var module = info["module"];
           var xml = info["xml"];
 		  xmlStringToBlocks(xml);
-          // xmlStringToWorkspace(xml);
-
       } catch (e) {
           alert(e);
       }
@@ -423,32 +421,8 @@ Blockly.showContextMenu_ = function(x, y) {
 		  blockXmls = dom.firstChild.childNodes;
 		  Blockly.Xml.domToBlock_(Blockly.mainWorkspace, blockXmls[0]);
 	  }
-      // 	  
-      // 
-      // 
-      // 
-      // for (var i = blockXmls.length - 1; i >= 0; i--) {
-      //   
-      // };
   }
-	// var instancesToCode = function() {
-	//   var code = '';
-	//   var components = { 
-	// 	  'Button1' : { 'typeName' : 'Button' }, 
-	// 	  'Clock1' : { 'typeName' : 'Clock'},
-	// 	  'TextBox1' : { 'typeName' : 'TextBox'},
-	// 	  'Canvas1' : { 'typeName' : 'Canvas'}
-	//   };
-	//   for (var componentName in components) {
-	// 	  code += componentName + ' = ' + 
-	// 	  components[componentName].typeName + '()\n'
-	//   }
-	// 
-	//   console.log("INSTANCES");
-	//   console.log(code);
-	// 
-	//   return code;
-	//   	}
+
 	var CodeGenerator = function () {	  
 	  	var codeForButtonComponent = function() {
 	  	  var code = '';
@@ -502,22 +476,22 @@ Blockly.showContextMenu_ = function(x, y) {
 	  		'\t\tself.TimerAlwaysFires = True\n' +
 	  		'\t@property\n' + 
 	  		'\tdef AddDays(self, instant, days):\n' + 
-	  		ret
+	  		ret +
 	  		'\t@property\n' + 
 	  		'\tdef AddHours(self, instant, hours):\n' + 
-	  		ret
+	  		ret + 
 	  		'\t@property\n' + 
 	  		'\tdef AddMinutes(self, instant, minutes):\n' + 
-	  		ret
+	  		ret + 
 	  		'\t@property\n' + 
 	  		'\tdef AddMonths(self, instant, months):\n' + 
-	  		ret
+	  		ret + 
 	  		'\t@property\n' + 
 	  		'\tdef AddSeconds(self, instant, seconds):\n' + 
-	  		ret
+	  		ret + 
 	  		'\t@property\n' + 
 	  		'\tdef AddWeeks(self, instant, weeks):\n' + 
-	  		ret
+	  		ret +
 	  		'\t@property\n' + 
 	  		'\tdef AddYears(self, instant, years):\n' + 
 	  		ret;
@@ -607,22 +581,16 @@ Blockly.showContextMenu_ = function(x, y) {
 				  }
 			  }
   
-			  console.log("INSTANCES");
-			  console.log(code);
-  
 			  return code;
 		}
-	  //   
+   
 	  var classesToCode = function() {
 	  	  var code = '';
 		  var testCode;
 	  	  for (var type in Blockly.ComponentTypes) {
 			  if (codeForTypes.hasOwnProperty(type)) { code += codeForTypes[type]; }
 	  	  }
-  	  
-	  	  console.log("CLASSES");
-	  	  console.log(code);
-  	  
+
 	  	  return code;
 	  }	
 
@@ -630,55 +598,11 @@ Blockly.showContextMenu_ = function(x, y) {
 	    	  var code = '';	  
 	    	  code += classesToCode();
 	    	  code += instancesToCode();
-  	  
-	    	  console.log("HISTORY");
-	    	  console.log(code);
-  	  
+  	    
 	    	  return code;
 	    }
 	}
 	
-  
-	
-  // 
-
-  // 
-  // var codeForButtonComponent = function() {
-  // 	  var code = '';
-  // 	  var ret = '\t\treturn\n';
-  // 	  code += 'class Button:\n' + 
-  // 	  '\tdef __init__(self):\n' + 
-  // 	  '\t\tself.BackgroundColor = "clear"\n' +
-  // 	  '\tdef Click(self):\n' + 
-  // 	  ret +
-  // 	  '\tdef LongClick(self):\n' +
-  // 	  ret +
-  // 	  '\tdef GotFocus(self):\n' + 
-  // 	  ret +
-  // 	  '\tdef LostFocus(self):\n' +
-  // 	  ret;
-  // 	  
-  // 	  return code;
-  // }
-  // 
-  
-	//   var button = 
-	//   	'class Button:
-	//    		def __init__(self):
-	//         	self.BackgroundColor = "clear"
-	//     
-	//     	def Click(self):
-	//         	return
-	//         
-	//     	def LongClick(self):
-	//         	return
-	//     
-	//     	def GotFocus(self):
-	//         	return
-	//     
-	//     	def LostFocus(self):
-	//         	return
-	// '
 	var generator = new CodeGenerator();
   
   $( "#dialog-modal" ).dialog({
@@ -692,12 +616,7 @@ Blockly.showContextMenu_ = function(x, y) {
       text: "To Block",
       click: function() { 
         $(this).dialog("close");
-        console.log($(this).find("textarea").val());
-		console.log("DIALOG");
-		// console.log(getCodeHistory());
 		var code = generator.generate();
-		console.log("I hope this works");
-		console.log(code);
         runit(code + $(this).find("textarea").val());
       
       }

@@ -505,6 +505,41 @@ Compiler.prototype.hasNext = function(s) {
             return false;
         case Return_:
 			return false;
+        case Assign:
+			if (s.targets.length === 1) {
+				return !this.creatingInstance(s.targets[0].ctx, s.value) &&
+				this.checkAttrNext(s.targets[0], s.value);
+			}
+            return true;
+        case For_:
+            return true;
+        case While_:
+            return true;
+        case If_:
+            return true;
+        case Expr:
+			if (s.value.constructor === Call) {
+				switch(s.value.func.constructor) {
+				case Name:
+					var funcName = s.value.func.id.v;	
+					if (!this.functions[funcName] || this.functions[funcName]['didReturn']) { return false; }
+					else { return true; }
+					break;
+				case Attribute:
+					var instanceName = s.value.func.value.id.v;
+					var className = this.instances[instanceName];
+					var funcName = s.value.func.attr.v;
+					if (this.compClasses[className][funcName]['didReturn']) { return false; }
+					else { return true; }
+					break;
+				}
+			}
+			return false;
+        // case AugAssign:
+        //     return this.caugassign(s);
+        // case Print:
+        //     this.cprint(s);
+        //     break;
         // case Quit_:
         // case Exit_:
         //     out("return $loc;");
@@ -512,28 +547,7 @@ Compiler.prototype.hasNext = function(s) {
         // case Delete_:
         //     this.vseqexpr(s.targets);
         //     break;
-        case Assign:
-			if (s.targets.length === 1) {
-				console.log("creating instance");
-				console.log(this.creatingInstance(s.targets[0].ctx, s.value));
-				console.log("checkAttrNext");
-				console.log(this.checkAttrNext(s.targets[0], s.value));
-				return !this.creatingInstance(s.targets[0].ctx, s.value) &&
-				this.checkAttrNext(s.targets[0], s.value);
-			}
-            return true;
-        // case AugAssign:
-        //     return this.caugassign(s);
-        // case Print:
-        //     this.cprint(s);
-        //     break;
-        case For_:
-            return true;
-        case While_:
-            return true;
-        case If_:
-            return true;
-        // case Raise:
+	    // case Raise:
         //     return this.craise(s);
         // case TryExcept:
         //     return this.ctryexcept(s);
@@ -547,32 +561,6 @@ Compiler.prototype.hasNext = function(s) {
         //     return this.cfromimport(s);
         // case Global:
         //     break;
-        case Expr:
-			if (s.value.constructor === Call) {
-				console.log("here we are");
-				console.log(s.value);
-				//CHECK FOR ATTRIBUTES AT SOME POINT
-				switch(s.value.func.constructor) {
-				case Name:
-					console.log("has to be");					// 
-					// console.log(this.functions[funcName]);
-					var funcName = s.value.func.id.v;	
-					if (!this.functions[funcName] || this.functions[funcName]['didReturn']) { 
-						console.log("I KNOW IT DID");
-						return false; }
-					else { return true; }
-					break;
-				case Attribute:
-					var instanceName = s.value.func.value.id.v;
-					var className = this.instances[instanceName];
-					console.log(s.value.func.attr);
-					var funcName = s.value.func.attr.v;
-					if (this.compClasses[className][funcName]['didReturn']) { return false; }
-					else { return true; }
-					break;
-				}
-			}
-			return false;
         // case Pass:
         //     break;
         // case Break_:
@@ -611,22 +599,6 @@ Compiler.prototype.transVseqstmt = function(stmts, isFunction)
 	}
 	
 	return  output;
-		// 
-	//     for (var i = 0; i < stmts.length; ++i)  {
-	// 	var dict = this.vstmt(stmts[i]);
-	// 	if (!dict['didReturn']) { 
-	// 		body += dict['trans'];
-	// 		didTrans = true;
-	// 	} else {
-	// 		if (dict['trans'] !== null ) { 
-	// 			returnTrans = dict['trans'];
-	// 			didReturn = true; 
-	// 		}
-	// 		break;
-	// 	}
-	// }
-	// 
-	// return { 'didTrans' : didTrans, 'trans' : body, 'didReturn' : didReturn, 'returnTrans' : returnTrans };
 };
 
 Compiler.prototype.addNextFunction = function(stmts, index) {
@@ -642,35 +614,25 @@ Compiler.prototype.addNextFunction = function(stmts, index) {
 
 	var output = { 'didTrans' : didTrans, 'trans' : xml, 'didReturn' : didReturn, 'returnTrans' : returnTrans };
 	dict = this.translateStmt(stmts[index]);
-	console.log("GOT YA TONY");
-	console.log("HERE IS THE INDEX " + index);
-	console.log(dict);
 	xml = dict['trans'];
 	if (this.isReturn(stmts[index])) {
 		if (dict['trans'] != null) {
-			console.log("LEGGO TONY");
 			output.returnTrans = xml;
 			output.didReturn = true;
 		}
 	} else  {
-		console.log("IN THE ELSE");
-		console.log(stmts);
-		console.log(index);
 		index++;
 		output.didTrans = true;
 		if (index < stmts.length) {
 			xml = xml.substring(0, xml.length - block.length);
-			console.log("RIGHT BEFORE");
 			dict = this.addNextFunction(stmts, index, true);
-			console.log("STILL GOING");
-			console.log(stmts[index]);
-			console.log(dict);
 			if (this.hasNext(stmts[index])) {
 				xml += '<next>' + dict['trans'] + '</next></block>';
 			} else if (this.isReturn(stmts[index])) {
 				xml += block;
 			} else {
-				// THROW REASONABLE PYTHON ERROR
+				// Skipping Exppresions
+				// Throw Valid Python Error
 				if ((index+1) === stmts.length) {
 					xml += '</block>'
 				}
@@ -685,52 +647,8 @@ Compiler.prototype.addNextFunction = function(stmts, index) {
 
 		output.trans = xml;
 	}
-	console.log("FINAL OUTPUT");
-	console.log(output);
+
 	return output;
-	// 
-	// var dict = this.translateStmt(stmts[index]); 	
-	// for (var i = 0; i < stmts.length; i++) {
-	// if (stmts[index].isReturn) {
-	// 	if (dict['trans'] != null) {
-	// 		output.returnTrans = dict['trans'];
-	// 		output.didReturn = true;
-	// 	} 
-	// 	
-	// 	return output;
-	// } else if (stmts[index].hasNext) {
-	// 	if (i + 1 < stmts.length && stmts[index +1].hasNext) {
-	// 		
-	// 	}
-	// }
-	// 
-	// if (!dict['didReturn']) {
-	// 	xml += dict['trans'];
-	// 	output.trans = xml;
-	// 	output.didTrans = true;
-	// } else if (this.hasNext(stmts[index)){
-	// 	if (dict['trans'] !== null) {
-	// 		output.returnTrans = dict['trans'];
-	// 		output.didReturn = true;
-	// 	}
-	// 	return output;
-	// }
-	// 
-	// index++;
-	// if (index >== length)
-	// 	return output;
-		// CHECK WHAT'S GOING ON HERE
-		// return xml + block;
-	// 
-	// if (this.hasNext(stmts[index-1]) && this.hasNext(stmts[index]) {
-	// 	xml = xml.substring(0, xml.length - block.length);
-	// 	console.log(index);
-	// 	dict = this.addNext(stmts, index);
-	// 	xml += '<next>' + dict['trans'] + '</next></block>';
-	// 	output.trans = xml;
-	// 	console.log(index);
-	// 	// CHECK TO SEE IF INDEX WAS INCREMENTED
-	// }
 }
 
 Compiler.prototype.addNext = function(stmts, index, isNext) {
@@ -742,21 +660,12 @@ Compiler.prototype.addNext = function(stmts, index, isNext) {
 	var xml = '';
 	var length = stmts.length;
 	var block = '</block>';
-	console.log(xml);
 	var dict = this.translateStmt(stmts[index]); 
 	var output = { 'didTrans' : didTrans, 'trans' : xml, 'didReturn' : didReturn, 'returnTrans' : returnTrans };
-	console.log("ADD NEXT");
-	console.log(stmts[index]);
-	console.log(dict);
-	console.log(xml);
-	console.log(output);
 	this.globalIndex = index;
 	this.globalIndex++;
 	index++;
-	console.log(index);
 	if (!dict['didReturn']) {
-		// console.log("HERE IS XML");
-		// console.log(xml)
 		xml += dict['trans'];
 		output.trans = xml;
 		output.didTrans = true;
@@ -768,38 +677,19 @@ Compiler.prototype.addNext = function(stmts, index, isNext) {
 		return output;
 	}
 
-	console.log(output);
 	if (index >= length)
 		return output;
-		// CHECK WHAT'S GOING ON HERE
-		// return xml + block;
 	
-	console.log(this.hasNext(stmts[index-1]));
-	console.log(stmts[index-1]);
-	console.log(this.hasNext(stmts[index]));
-	console.log(stmts[index]);
 	if (this.hasNext(stmts[index-1]) && this.hasNext(stmts[index])) {
-		console.log("HAS NEXT BEGAN");
-		console.log(stmts[index-1]);
-		console.log(stmts[index]);
 		xml = xml.substring(0, xml.length - block.length);
-		console.log(index);
 		dict = this.addNext(stmts, index, true);
-		console.log(dict);
 		xml += '<next>' + dict['trans'] + '</next></block>';
 		output.trans = xml;
-		console.log("HAS NEXT DONE")
-		console.log(index);
-		console.log(this.globalIndex);
-		// CHECK TO SEE IF INDEX WAS INCREMENTED
 	}
 	
 	if (isNext) { return output; }
 
 	if (this.globalIndex < length) {
-		console.log("THE OTHER OPTION");
-		console.log(length);
-		console.log(index);
 		dict = this.addNext(stmts, this.globalIndex);
 		xml += dict['trans'];
 		output.trans = xml;
@@ -808,24 +698,11 @@ Compiler.prototype.addNext = function(stmts, index, isNext) {
 	}
 
 	return output;
-	
-	// 
-	// xml = '<block type="lexical_variable_set" inline="false"' +
-	// 		this.translateExpr(e.elts[index]) + '<value name="VALUE">' + this.translateExpr(data.elts[index]) + '</value>';
-	// 		this.translateExpr(e.elts[index], data.elts[index]) + '<value name="VALUE">' + this.translateExpr(data.elts[index]) + '</value>';
-	// index++;
-	// if (index == length) 
-	// 	return xml + '</block>';
-	// return xml + '<next>' + this.doWork(e, data, index) + '</next></block>';		
 }
 Compiler.prototype.transCclass = function(s)
 {
 	var className = s.name.v;
 	this.compClasses[className] = {};
-	console.log("Tranlsating THE CLASS");
-	console.log(className);;
-	//ASSUMES ONLY METHOD DEFINITIONS
-	//MAYBE ASSERT HERE
 	for (var i = 0;i < s.body.length;i++) {
 		var func = s.body[i];
 		var funcName = func.name.v;
@@ -836,8 +713,6 @@ Compiler.prototype.transCclass = function(s)
 			this.compClasses[className][funcName]['didReturn'] = true;
 			var decorators = func.decorator_list;
 			for (var j = 0;j < decorators.length;j++) {
-				console.log("going");
-				console.log(decorators[j]);
 				switch(decorators[j].id.v) {
 					case 'event':
 						this.compClasses[className][funcName]['callable'] = false;
@@ -869,46 +744,13 @@ Compiler.prototype.transCclass = function(s)
 			}
 		}
 	}
-	console.log('DONE WITH THE CLASS');
+
 	return { 'didTrans' : false, 'trans' : '', 'didReturn' : false, 'returnTrans' : '' };
-    // goog.asserts.assert(s instanceof ClassDef);
-  //   var decos = s.decorator_list;
-  // 
-  //   // decorators and bases need to be eval'd out here
-  //   //this.vseqexpr(decos);
-  //   
-  //   var bases = this.vseqexpr(s.bases);
-  // 
-  //   var scopename = this.enterScope(s.name, s, s.lineno);
-  //   var entryBlock = this.newBlock('class entry');
-  // 
-  //   this.u.prefixCode = "var " + scopename + "=(function $" + s.name.v + "$class_outer($globals,$locals,$rest){var $gbl=$globals,$loc=$locals;";
-  //   this.u.switchCode += "return(function " + s.name.v + "(){";
-  //   this.u.switchCode += "var $blk=" + entryBlock + ",$exc=[];while(true){switch($blk){";
-  //   this.u.suffixCode = "}break;}}).apply(null,$rest);});";
-  // 
-  //   this.u.private_ = s.name;
-  //   
-  //   this.cbody(s.body);
-  //   out("break;");
-  // 
-  //   // build class
-  // 
-  //   // apply decorators
-  // 
-  //   this.exitScope();
-  // 
-  //   // todo; metaclass
-  //   var wrapped = this._gr("built", "Sk.misceval.buildClass($gbl,", scopename, ",", s.name['$r']().v, ",[", bases, "])");
-  // 
-  //   // store our new class under the right name
-  //   this.nameop(s.name, Store, wrapped);
 };
 
 Compiler.prototype.transCfunction = function(s)
 {
     goog.asserts.assert(s instanceof FunctionDef);
-	console.log("STARTED FUNCTION");
 	var current = this.u.ste.blockType;
 	this.u.ste.blockType = FunctionBlock;
 	for (var i = 0; i < s.args.args.length; i++) {
@@ -917,8 +759,6 @@ Compiler.prototype.transCfunction = function(s)
 	var dict = this.transVseqstmt(s.body, true);
 	if (dict['didReturn']) { 
 		var trans = '<block type="procedures_defreturn" inline="false"><mutation>';
-		console.log("B4 TEBOOOWWWW " + s.args.args.length);
-		console.log(s);
 		this.functions[s.name.v] = {};
 		this.functions[s.name.v]['args'] = [];
 		this.functions[s.name.v]['didReturn'] = true;
@@ -926,9 +766,6 @@ Compiler.prototype.transCfunction = function(s)
 			trans += '<arg name="' + s.args.args[i].id.v + '"></arg>';
 			this.functions[s.name.v]['args'].push(s.args.args[i].id.v);
 		}
-		console.log("TEBOOOWWWW");
-		console.log(s.name.v);
-		console.log(dict['trans']);
 		trans += '</mutation><title name="NAME">' + s.name.v + '</title><value name="RETURN">';
 		if (dict['didTrans']) { trans += '<block type="procedures_do_then_return" inline="false"><statement name="STM">' + dict['trans'] + '</statement><value name="VALUE">'; }
 		trans += dict['returnTrans'] ;
@@ -951,12 +788,6 @@ Compiler.prototype.transCfunction = function(s)
 	this.u.ste.blockType = current;
 	this.currentArgs = {};
 	return { 'trans' : trans, 'didReturn' : false };
-    // var funcorgen = this.buildcodeobj(s, s.name, s.decorator_list, s.args, function(scopename)
-    //         {
-    //             this.vseqstmt(s.body);
-    //             out("return null;"); // if we fall off the bottom, we want the ret to be None
-    //         });
-    // this.nameop(s.name, Store, funcorgen);
 };
 
 Compiler.prototype.transCif = function(s)
@@ -966,42 +797,12 @@ Compiler.prototype.transCif = function(s)
 	var xml = '<block type="controls_if" inline="false"><value name="IF0">' +
 	test + '</value>';
 	var dict = this.transVseqstmt(s.body, true);
-	console.log("WHAT IS GOING ON");
-	console.log(dict);
 	if (dict['didTrans']) { xml += '<statement name="DO0">' + dict['trans'] + '</statement>'; }
 	xml += '</block>';
 	var didReturn = dict['didReturn'];
 	var returnTrans = dict['returnTrans'];
-	console.log(didReturn);
-	console.log(returnTrans);
-	return { 'didTrans' : true, 'trans' : xml, 'didReturn' : didReturn, 'returnTrans' : returnTrans };
-    // var constant = this.exprConstant(s.test);
-    // if (constant === 0)
-    // {
-    //     if (s.orelse) 
-    //         this.vseqstmt(s.orelse);
-    // }
-    // else if (constant === 1)
-    // {
-    //     this.vseqstmt(s.body);
-    // }
-    // else
-    // {
-    //     var end = this.newBlock('end of if');
-    //     var next = this.newBlock('next branch of if');
-    // 
-    //     var test = this.vexpr(s.test);
-    //     this._jumpfalse(this.vexpr(s.test), next);
-    //     this.vseqstmt(s.body);
-    //     this._jump(end);
-    // 
-    //     this.setBlock(next);
-    //     if (s.orelse)
-    //         this.vseqstmt(s.orelse);
-    //     this._jump(end);
-    // }
-    // this.setBlock(end);
 
+	return { 'didTrans' : true, 'trans' : xml, 'didReturn' : didReturn, 'returnTrans' : returnTrans };
 };
 Compiler.prototype.transCwhile = function(s)
 {
@@ -1009,70 +810,25 @@ Compiler.prototype.transCwhile = function(s)
 	var xml = '<block type="controls_while" inline="false"><value name="TEST">' +
 	test + '</value>';
 	var dict = this.transVseqstmt(s.body, true);
-	console.log("THE WHILE")
-	console.log(dict['trans']);
 	if (dict['didTrans']) { xml += '<statement name="DO">' + dict['trans'] + '</statement>'; }
 	xml += '</block>';
 	var didReturn = dict['didReturn'];
 	var returnTrans = dict['returnTrans'];
+
 	return { 'didTrans' : true, 'trans' : xml, 'didReturn' : didReturn, 'returnTrans' : returnTrans };
-    // 	
-    // 	
-    // var constant = this.exprConstant(s.test);
-    // if (constant === 0)
-    // {
-    //     if (s.orelse)
-    //         this.vseqstmt(s.orelse);
-    // }
-    // else
-    // {
-    //     var top = this.newBlock('while test');
-    //     this._jump(top);
-    //     this.setBlock(top);
-    // 
-    //     var next = this.newBlock('after while');
-    //     var orelse = s.orelse.length > 0 ? this.newBlock('while orelse') : null;
-    //     var body = this.newBlock('while body');
-    // 
-    //     this._jumpfalse(this.vexpr(s.test), orelse ? orelse : next);
-    //     this._jump(body);
-    // 
-    //     this.pushBreakBlock(next);
-    //     this.pushContinueBlock(top);
-    // 
-    //     this.setBlock(body);
-    //     this.vseqstmt(s.body);
-    //     this._jump(top);
-    // 
-    //     this.popContinueBlock();
-    //     this.popBreakBlock();
-    // 
-    //     if (s.orelse.length > 0)
-    //     {
-    //         this.setBlock(orelse);
-    //         this.vseqstmt(s.orelse);
-    //     }
-    // 
-    //     this.setBlock(next);
-    // }
 }
 Compiler.prototype.transCfor = function(s)
 {
 	var xml = '';
 	var iter = s.iter;
 	var name; 
-	console.log("FOR LOOPS");
-	console.log(s);
-	console.log(iter);
 	switch (iter.constructor) {
 		case Name:
-			console.log("trans for NAME");
 			name = s.target.id.v;
 			xml += '<block type="controls_forEach" inline="false"><title name="VAR">' + name + 
 			'</title><value name="LIST">' + this.translateExpr(iter) + '</value>';
 			break;
 		case Call: 
-			console.log("trans for CALL");
 			name = s.target.id.v;
 			if (iter.func.id.v === "range" || iter.func.id.v === "xrange") {
 				xml += '<block type="controls_forRange" inline="false"><title name="VAR">' +
@@ -1086,7 +842,6 @@ Compiler.prototype.transCfor = function(s)
 			}
 			break;
 		default:
-			console.log("THE EXTRA ONE");
             goog.asserts.fail("unhandled case");
 	}
 	
@@ -1097,7 +852,6 @@ Compiler.prototype.transCfor = function(s)
 	if (dict['didTrans']) { xml += '<statement name="DO">' + dict['trans'] + '</statement>'; }
 	xml += '</block>';
 	
-	console.log(xml);
 	var didReturn = dict['didReturn'];
 	var returnTrans = dict['returnTrans'];
 	
@@ -1106,15 +860,11 @@ Compiler.prototype.transCfor = function(s)
 
 Compiler.prototype.transCcall = function(e, isName, isAttr, args)
 {
-	console.log("AT THE TOP OF CALL");
-	console.log(e);
 	var switchVal = e.func;
 	if (isName) { switchVal = e; }
-	console.log(switchVal);
 	switch(switchVal.constructor) {
 		case Name: 
 			var xml = '';
-			console.log("INSIDE NAME");
 			var funcName = '';
 			if (!isName) { funcName = e.func.id.v; }
 			else { funcName = e.id.v; }
@@ -1168,13 +918,11 @@ Compiler.prototype.transCcall = function(e, isName, isAttr, args)
 			xml += '</block>';
 			return xml;			
 		case Attribute:
-			console.log("did this go down");
 			var funcName = e.func.attr.v;
 			var instanceName = e.func.value.id.v;
 			var className = this.instances[instanceName];
 			var attrDef = this.compClasses[className][funcName];
 			var xml = '';
-			console.log(attrDef);
 			if (attrDef['callable']) {
 				var args = attrDef['args'];
 				var givenArgs = e.args;
@@ -1193,13 +941,10 @@ Compiler.prototype.transCcall = function(e, isName, isAttr, args)
 				return xml;
 			}
 			
-			//THIS IS WHERE YOU WOULD THROW AN ERROR
+			// Valid Python Error
 			return '';	
 	}
-	// if (!this.compClasses.hasOwnProperty(funcName)) {
-	// 
-	// }
-	console.log("EVALUATING CLASS CALL");
+
 	return '';
 };
 
@@ -1211,9 +956,6 @@ Compiler.prototype.doWork = function(e, data, index) {
 			this.translateExpr(e.elts[index]) + '<value name="VALUE">' + this.translateExpr(data.elts[index]) + '</value>';
 			this.translateExpr(e.elts[index], data.elts[index]) + '<value name="VALUE">' + this.translateExpr(data.elts[index]) + '</value>';
 	index++;
-	console.log(e);
-	console.log(index);
-	console.log(length);
 	if (index == length) 
 		return xml + '</block>';
 	return xml + '<next>' + this.doWork(e, data, index) + '</next></block>';		
@@ -1244,10 +986,6 @@ Compiler.prototype.transCtupleorlist = function(e, data, tuporlist)
 };
 Compiler.prototype.transCcompare = function(e)
 {
-	console.log(e.ops[0].name);
-	console.log("We HERE?");
-	console.log(e.ops);
-	console.log(e.ops[0]);
 	var compare;
 	var left; 
 	var right;
@@ -1298,16 +1036,8 @@ Compiler.prototype.transCbinop = function(e)
 	var right;
 	switch (e.op.prototype._astname) {
 		case "Add":
-			console.log("Add");
-			console.log("HERE");
-			console.log(e.left);
-			// console.log(e.left.func);
-			// console.log(e.left.func.id);
-			// console.log(e.left.func.id.v);
 			strLeft = (e.left._astname == "Call" && e.left.func.id.v === "str");
 			strRight = (e.right._astname == "Call" && e.right.func.id.v === "str");
-			console.log(strLeft);
-			console.log(strRight);
 			if (e.left._astname === "Str" || e.right_astname === "Str" || strLeft || strRight) {
 				left = this.translateExpr(e.left);
 				right = this.translateExpr(e.right);
@@ -1315,22 +1045,14 @@ Compiler.prototype.transCbinop = function(e)
 				return '<block type="text_join" inline="false"><mutation items="2"></mutation><value name="ADD0">' +
 				left + '</value><value name="ADD1">' + right + '</value></block>';	
 			}
-			// if (e.left._astname === "Num" && e.right._astname == "Num") {
+
 			start = '<block type="math_add" inline="true">';
 			arg0 = '<value name="NUM0">';
 			arg1 = '<value name="NUM1">';
 			left = this.translateExpr(e.left);
 			right = this.translateExpr(e.right);
-			console.log("AAAah");
 			break;	
-			// }
-			
-			
-			
-			
-			
 		case "Sub":
-			console.log("Subtract");
 			start = '<block type="math_subtract" inline="true">';
 			arg0 = '<value name="A">';
 			arg1 = '<value name="B">';
@@ -1338,7 +1060,6 @@ Compiler.prototype.transCbinop = function(e)
 			right = this.translateExpr(e.right);
 			break;
 		case "Mult":
-			console.log("Multiply");
 			start = '<block type="math_multiply" inline="true">';
 			arg0 = '<value name="NUM0">';
 			arg1 = '<value name="NUM1">';
@@ -1346,20 +1067,19 @@ Compiler.prototype.transCbinop = function(e)
 			right = this.translateExpr(e.right);
 			break;
 		case "Div":
-			console.log("Divide");
 			start = '<block type="math_division" inline="true">';
 			arg0 = '<value name="A">';
 			arg1 = '<value name="B">';
 			left = this.translateExpr(e.left);
 			right = this.translateExpr(e.right);
 		case "Pow":
-			console.log("Power");
 			start = '<block type="math_power" inline="true">';
 			arg0 = '<value name="A">';
 			arg1 = '<value name="B">';
 			left = this.translateExpr(e.left);
 			right = this.translateExpr(e.right);
 		default:
+			// Maybe throw valid python error
 			console.log("Missed them all");
 	}
 	return start + '<mutation items="2"></mutation>' + arg0 
@@ -1381,7 +1101,7 @@ Compiler.prototype.transCboolop = function(e)
 		this.translateExpr(e.values[1]) +
 		'</value>';
 	} else { 
-		//THROW A VALID PYTHON ERROR? 
+		//Throw a valid python error
 	}
 	
 	xml += '</block>';
@@ -1401,8 +1121,6 @@ Compiler.prototype.creatingInstance = function(ctx, dataToStore) {
 Compiler.prototype.checkAttrNext = function(e, data) {
 	if (e._astname === "Name") { return true; } 
 	if (e._astname === "Subscript") { return true; }
-	console.log("CHECKING ATTR NEXT");
-	console.log(e);
     switch (e.ctx)
     {
         case AugLoad:
@@ -1469,37 +1187,28 @@ Compiler.prototype.checkScope = function(name, ctx, dataToStore)
         case FREE:
             dict = "$free";
             optype = OP_DEREF;
-			console.log("FREE " + name.v);
             break;
         case CELL:
             dict = "$cell";
             optype = OP_DEREF;
-			console.log("CELL " + name.v);
             break;
         case LOCAL:
             // can't do FAST in generators or at module/class scope
             if (this.u.ste.blockType === FunctionBlock && !this.u.ste.generator) {
                 optype = OP_FAST;
-				console.log("WE WENT FAST HERE");
 			}
-			console.log("LOCAL " + name.v);
-			// variable = "global " + name.v;
 			variable = name.v;
             break;
         case GLOBAL_IMPLICIT:
             if (this.u.ste.blockType === FunctionBlock)
                 optype = OP_GLOBAL;
-			console.log("GLOBAL_IMPLICIT " + name.v);
 			variable = "global " + name.v;
             break;
         case GLOBAL_EXPLICIT:
             optype = OP_GLOBAL;
-			console.log("GLOBAL_EXPLICIT " + name.v);
 			variable = "global " + name.v;
         default:
-			console.log("THERE IS NO WAY");
 			variable = name.v;
-			console.log(scope);
             break;
     }
 	
@@ -1507,14 +1216,9 @@ Compiler.prototype.checkScope = function(name, ctx, dataToStore)
 	if (this.currentArgs[variable]) { isGlobal = false; }
 	else { isGlobal = true; }
 	
-	console.log("THE XML");
-	console.log(this.currentArgs);
-	console.log(isGlobal);
-	console.log(variable);
 	if (isGlobal) { xml += '<title name="VAR">global ' + variable + '</title>'; }
 	else { xml += '<title name="VAR">' + variable + '</title>'; }
-	console.log(xml);
-	// trans += '<value name="VALUE">' + translateExpr(dataToStore) + 
+
     // have to do this after looking it up in the scope
     mangled = fixReservedWords(mangled);
     
@@ -1536,13 +1240,11 @@ Compiler.prototype.checkScope = function(name, ctx, dataToStore)
             switch (ctx)
             {
                 case Load:
-					console.log("LOAD OP_NAME " + variable);
 					xml = '<block type="lexical_variable_get">' + xml + '</block>';
 					break;
                 case Param:
                     return mangled;
                 case Store:
-					console.log("OP_FAST");
 					xml = '<block type="lexical_variable_set" inline="false">' + xml +
 					'<value name="VALUE">' + this.translateExpr(dataToStore) + '</value></block>';
 					if (isGlobal) { this.globals[variable] = true; }
@@ -1560,12 +1262,10 @@ Compiler.prototype.checkScope = function(name, ctx, dataToStore)
                 case Load:
                     var v = this.gensym('loadname');
                     // can't be || for loc.x = 0 or null
-					console.log("LOAD OP_NAME " + variable);
 					xml = '<block type="lexical_variable_get">' + xml + '</block>';
                     // return v;
 					break;
                 case Store:
-					console.log("OP_NAME");
 					xml = '<block type="lexical_variable_set" inline="false">' + xml +
 					'<value name="VALUE">' + this.translateExpr(dataToStore) + '</value></block>';
 					if (isGlobal) { this.globals[variable] = true; }
@@ -1612,20 +1312,11 @@ Compiler.prototype.checkScope = function(name, ctx, dataToStore)
             goog.asserts.fail("unhandled case");
     }
 	
-	console.log("MADE IT THROUGH");
 	return xml;
 };
 
 Compiler.prototype.translateExpr = function(e, data, augstoreval)
 {
-    // if (e.lineno > this.u.lineno)
-    // {
-    //     this.u.lineno = e.lineno;
-    //     this.u.linenoSet = false;
-    // }
-    //this.annotateSource(e);
-	console.log("We are Translating Expression");
-	console.log(e);
     switch (e.constructor)
     {
 		case Compare:
@@ -1634,8 +1325,6 @@ Compiler.prototype.translateExpr = function(e, data, augstoreval)
             return this.transCboolop(e);
  		case BinOp:	
 			return this.transCbinop(e);
-			
-//     return this._gr('binop', "Sk.abstr.numberBinOp(", this.vexpr(e.left), ",", this.vexpr(e.right), ",'", e.op.prototype._astname, "')");
 		case UnaryOp:
 			if (e.op.prototype._astname === "USub") {
 				return '<block type="math_neg" inline="false"><title name="OP">NEG</title><value name="NUM">' +
@@ -1643,196 +1332,151 @@ Compiler.prototype.translateExpr = function(e, data, augstoreval)
 			}
 			
 			return '';
-// case Lambda:
-//     return this.clambda(e);
-// case IfExp:
-//     return this.cifexp(e);
-// case Dict:
-//     return this.cdict(e);
-// case ListComp:
-//     return this.clistcomp(e);
-// case GeneratorExp:
-//     return this.cgenexp(e);
-// case Yield:
-//     return this.cyield(e);
-	case Call:
-	    return this.transCcall(e);
-	case Num:
-		var value;
-		if (typeof e.n === "number")
-			value = e.n;
-		else if (e.n instanceof Sk.builtin.nmber)
-			value = e.n.tp$str().v;	// "Sk.numberFromStr('" + e.n.tp$str().v + "')";
-		else if (e.n instanceof Sk.builtin.lng)
-			value = e.n.tp$str().v; //"Sk.longFromStr('" + e.n.tp$str().v + "')";
-		else
-			goog.asserts.fail("unhandled Num type");
- 		return '<block type="math_number"><title name="NUM">' + value + '</title></block>'
-	case Str:
-	    // return this._gr('str', "new Sk.builtins['str'](", e.s['$r']().v, ")");
-		var str = e.s['$r']().v;
-		str = str.toString();
-		str = str.substring(1, str.length -1);
-		console.log(str);
-		// console.log(y.toStringr());
-		// console.log("Hello");
-		// console.log(e.s['$r']().v instanceof String);
-		// console.log(e.s.tp$str().v )
-		return '<block type="text"><title name="TEXT">' + str + '</title></block>'
-	case Attribute:
-	    var val;
-		var xml = '';
-	    // if (e.ctx !== AugStore)
-// 	        val = this.vexpr(e.value);
-	    switch (e.ctx)
-	    {
-	        case AugLoad:
-	        case Load:
-	            return this._gr("lattr", "Sk.abstr.gattr(", val, ",", e.attr['$r']().v, ")");
-	        case AugStore:
-	            out("if(", data, "!==undefined){"); // special case to avoid re-store if inplace worked
-	            val = this.vexpr(augstoreval || null); // the || null can never happen, but closure thinks we can get here with it being undef
-	            out("Sk.abstr.sattr(", val, ",", e.attr['$r']().v, ",", data, ");");
-	            out("}");
-	            break;
-	        case Store:
-				var instanceName = e.value.id.v;
-				var className = this.instances[instanceName];
-				var attrName = e.attr.v;
-				console.log("FOUND IT");
-				console.log(this.compClasses);
-				console.log(className);
-				console.log(this.instances);
-				console.log(instanceName);
-				console.log(e);
-				if (className === "self") {
-					console.log("Come Back it was self");
-					break;
-				}
-				if (this.compClasses[className].hasOwnProperty(attrName)) {
-					// It is a function definition
-					console.log(data);
-					var name = '';
-					switch(data.constructor) {
-						case Name:
-							name = data.id.v;
-							break;
-						case Call:
-							name = data.func.id.v;
-							break;
-					}
-					console.log("BOUT TO ASSIGN");
-					console.log(name);
-					console.log(attrName);
-					console.log(data.prototype);
-					console.log(data._astname);
-					console.log(this.compClasses[className][attrName]);
-					console.log((!this.functions.hasOwnProperty(name) || data._astname === 'Call'));
-					if (this.compClasses[className][attrName]['isFunc'] && 
-						this.compClasses[className][attrName]['assignable'] &&
-						this.functions.hasOwnProperty(name)) {
-						// it has no return
-						if (!this.functions[name]['didReturn']) {
-							console.log("IT HAPENNED");
-							console.log(data);
-							var args = this.compClasses[className][attrName]['args'];
-							xml += '<block type="' + instanceName + '_' + attrName + '">' +
-							'<title name="COMPONENT_SELECTOR">' + instanceName + '</title>' + 
-							'<statement name="DO">' + this.transCcall(data, true, true, args) + '</statement></block>';
-							console.log(xml);
+		case Call:
+		    return this.transCcall(e);
+		case Num:
+			var value;
+			if (typeof e.n === "number")
+				value = e.n;
+			else if (e.n instanceof Sk.builtin.nmber)
+				value = e.n.tp$str().v;	// "Sk.numberFromStr('" + e.n.tp$str().v + "')";
+			else if (e.n instanceof Sk.builtin.lng)
+				value = e.n.tp$str().v; //"Sk.longFromStr('" + e.n.tp$str().v + "')";
+			else
+				goog.asserts.fail("unhandled Num type");
+	 		return '<block type="math_number"><title name="NUM">' + value + '</title></block>'
+		case Str:
+			var str = e.s['$r']().v;
+			str = str.toString();
+			str = str.substring(1, str.length -1);
+			return '<block type="text"><title name="TEXT">' + str + '</title></block>'
+		case Attribute:
+		    var val;
+			var xml = '';
+		    switch (e.ctx)
+		    {
+		        case AugLoad:
+		        case Load:
+		            return this._gr("lattr", "Sk.abstr.gattr(", val, ",", e.attr['$r']().v, ")");
+		        case AugStore:
+		            out("if(", data, "!==undefined){"); // special case to avoid re-store if inplace worked
+		            val = this.vexpr(augstoreval || null); // the || null can never happen, but closure thinks we can get here with it being undef
+		            out("Sk.abstr.sattr(", val, ",", e.attr['$r']().v, ",", data, ");");
+		            out("}");
+		            break;
+		        case Store:
+					var instanceName = e.value.id.v;
+					var className = this.instances[instanceName];
+					var attrName = e.attr.v;
+					if (className === "self") {	break; }
+					if (this.compClasses[className].hasOwnProperty(attrName)) {
+						// It is a function definition
+						var name = '';
+						switch(data.constructor) {
+							case Name:
+								name = data.id.v;
+								break;
+							case Call:
+								name = data.func.id.v;
+								break;
 						}
-					} else if (!this.compClasses[className][attrName]['isFunc'] && 
-						(!this.functions.hasOwnProperty(name) || data._astname === 'Call')) {
-						// defining an attribute
-						console.log("ALMOST THERE");
-						if (!this.hasNext(data)) {
-							console.log("WE DOING IT");
-							xml += '<block type="' + instanceName + '_setproperty" inline="false">' +
-							'<mutation yailtype="' + this.yailtypeForProperty[attrName] + '"></mutation>' +
-							'<title name="COMPONENT_SELECTOR">' + instanceName + '</title>' + 
-							'<title name="PROP">' + attrName + '</title><value name="VALUE">' + this.translateExpr(data) +
-							'</value></block>';
-							console.log(xml);
+						if (this.compClasses[className][attrName]['isFunc'] && 
+							this.compClasses[className][attrName]['assignable'] &&
+							this.functions.hasOwnProperty(name)) {
+							// it has no return
+							if (!this.functions[name]['didReturn']) {
+								var args = this.compClasses[className][attrName]['args'];
+								xml += '<block type="' + instanceName + '_' + attrName + '">' +
+								'<title name="COMPONENT_SELECTOR">' + instanceName + '</title>' + 
+								'<statement name="DO">' + this.transCcall(data, true, true, args) + '</statement></block>';
+							}
+						} else if (!this.compClasses[className][attrName]['isFunc'] && 
+							(!this.functions.hasOwnProperty(name) || data._astname === 'Call')) {
+							// defining an attribute
+							if (!this.hasNext(data)) {
+								xml += '<block type="' + instanceName + '_setproperty" inline="false">' +
+								'<mutation yailtype="' + this.yailtypeForProperty[attrName] + '"></mutation>' +
+								'<title name="COMPONENT_SELECTOR">' + instanceName + '</title>' + 
+								'<title name="PROP">' + attrName + '</title><value name="VALUE">' + this.translateExpr(data) +
+								'</value></block>';
+							}
 						}
-					}
 					
-				}
-				return xml;
-	        case Del:
-	            goog.asserts.fail("todo;");
-	            break;
-	        case Param:
-	        default:
-	            goog.asserts.fail("invalid attribute expression");
-	    }
-	case Subscript:
-	    var val;
-		var xml = '';
-	    switch (e.ctx)
-	    {
-	        case AugLoad:
-	        case Load:
-				if (e.slice === Index) {
-					xml += '<block type="lists_select_item" inline="false"><value name="LIST">' +
-					this.translateExpr(e.value) + '</value><value name="NUM">' + 
-					this.translateExpr(e.slice.value) + '</value></block>';
-				}
+					}
+					return xml;
+		        case Del:
+		            goog.asserts.fail("todo;");
+		            break;
+		        case Param:
+		        default:
+		            goog.asserts.fail("invalid attribute expression");
+		    }
+		case Subscript:
+		    var val;
+			var xml = '';
+		    switch (e.ctx)
+		    {
+		        case AugLoad:
+		        case Load:
+					if (e.slice === Index) {
+						xml += '<block type="lists_select_item" inline="false"><value name="LIST">' +
+						this.translateExpr(e.value) + '</value><value name="NUM">' + 
+						this.translateExpr(e.slice.value) + '</value></block>';
+					}
 				
-				return xml;
-	        case Store:
-				xml += '<block type="lists_replace_item" inline="false"><value name="LIST">' +
-				this.translateExpr(e.value) + '</value><value name="NUM">' +
-				this.translateExpr(e.slice.value) + '</value><value name="ITEM">' + 
-				this.translateExpr(data) + '</value></block>';
-				
-				console.log(e);
-				console.log(data);
-				console.log("WE TRYNA STORE");
-				return xml;
-	        case Del:
-	            return this.vslice(e.slice, e.ctx, this.vexpr(e.value), data);
-	        case AugStore:
-	            out("if(", data, "!==undefined){"); // special case to avoid re-store if inplace worked
-	            val = this.vexpr(augstoreval || null); // the || null can never happen, but closure thinks we can get here with it being undef
-	            this.vslice(e.slice, e.ctx, val, data);
-	            out("}");
-	            break;
-	        case Param:
+					return xml;
+		        case Store:
+					xml += '<block type="lists_replace_item" inline="false"><value name="LIST">' +
+					this.translateExpr(e.value) + '</value><value name="NUM">' +
+					this.translateExpr(e.slice.value) + '</value><value name="ITEM">' + 
+					this.translateExpr(data) + '</value></block>';
+					return xml;
+		        case Del:
+		            return this.vslice(e.slice, e.ctx, this.vexpr(e.value), data);
+		        case AugStore:
+		            out("if(", data, "!==undefined){"); // special case to avoid re-store if inplace worked
+		            val = this.vexpr(augstoreval || null); // the || null can never happen, but closure thinks we can get here with it being undef
+		            this.vslice(e.slice, e.ctx, val, data);
+		            out("}");
+		            break;
+		        case Param:
+		        default:
+		            goog.asserts.fail("invalid subscript expression");
+		    }
+		case Name:
+		    return this.checkScope(e.id, e.ctx, data);
+		case List:
+		    return this.transCtupleorlist(e, data, 'list');
+		case Tuple:
+		    return this.transCtupleorlist(e, data, 'tuple');
 	        default:
-	            goog.asserts.fail("invalid subscript expression");
-	    }
-	case Name:
-		console.log("got here");			
-	    return this.checkScope(e.id, e.ctx, data);
-	case List:
-		console.log("LIST");
-	    return this.transCtupleorlist(e, data, 'list');
-	case Tuple:
-		console.log("TUPLE LEGGO");
-	    return this.transCtupleorlist(e, data, 'tuple');
-        default:
-            goog.asserts.fail("unhandled case in vexpr");
+	            goog.asserts.fail("unhandled case in vexpr");
+	// case Lambda:
+	//     return this.clambda(e);
+	// case IfExp:
+	//     return this.cifexp(e);
+	// case Dict:
+	//     return this.cdict(e);
+	// case ListComp:
+	//     return this.clistcomp(e);
+	// case GeneratorExp:
+	//     return this.cgenexp(e);
+	// case Yield:
+	//     return this.cyield(e);
     }
 };
 
 Compiler.prototype.translateStmt = function(s)
 {
-    // this.u.lineno = s.lineno;
-    // this.u.linenoSet = false;
-
-    // this.annotateSource(s);
-	console.log("Translating Statement");
     switch (s.constructor)
     {
         case FunctionDef:
             return this.transCfunction(s);
             break;
         case ClassDef:
-			console.log("ARE WE AT THE CLASS");
             return this.transCclass(s);
             break;
         case Return_:
-			console.log("BLOCK TYPE" + this.u.ste.blockType);
             if (this.u.ste.blockType !== FunctionBlock)
                 throw new SyntaxError("'return' outside function");
             if (s.value)
@@ -1840,53 +1484,29 @@ Compiler.prototype.translateStmt = function(s)
             else
 				return { "trans" : null, "didReturn" : false };
             break;
-        // case Quit_:
-        // case Exit_:
-        //     out("return $loc;");
-        //     break;
-        // case Delete_:
-        //     this.vseqexpr(s.targets);
-        //     break;
         case Assign:
             var n = s.targets.length;
-			console.log("I see you");
-			console.log(s);
-			console.log(s.value);
-			console.log("first");
-			console.log(s.targets[0]);
-			console.log("second");
-			console.log(s.targets[1]);
 			var val = this.vexpr(s.value);
-            // var val2 = this.translateExpr(s.value);
-			console.log("back");
-			console.log(val);
 			var trans = '';
 			var didReturn = false;
-			// console.log(val2);
             for (var i = 0; i < n; i++) {
-				console.log("YOU SEE ME");
-				console.log(i);
-				console.log(s.targets[i]);
-				console.log(s.value);
 				trans += this.translateExpr(s.targets[i], s.value);
 			}
-			
-			console.log("END OF ASSIGN");
-			console.log(trans);
 			return { 'trans' : trans, 'didReturn' : didReturn };
             break;
-        // case AugAssign:
-        //     return this.caugassign(s);
-        // case Print:
-        //     this.cprint(s);
-        //     break;
         case For_:
             return this.transCfor(s);
         case While_:
             return this.transCwhile(s);
         case If_:
 			return this.transCif(s);
-            // return this.cif(s);
+        case Expr:
+            return { "trans" : this.translateExpr(s.value), "didReturn" : false };
+        // case AugAssign:
+        //     return this.caugassign(s);
+        // case Print:
+        //     this.cprint(s);
+        //     break;
         // case Raise:
         //     return this.craise(s);
         // case TryExcept:
@@ -1901,8 +1521,6 @@ Compiler.prototype.translateStmt = function(s)
         //     return this.cfromimport(s);
         // case Global:
         //     break;
-        case Expr:
-            return { "trans" : this.translateExpr(s.value), "didReturn" : false };
         // case Pass:
         //     break;
         // case Break_:
@@ -1913,26 +1531,23 @@ Compiler.prototype.translateStmt = function(s)
         // case Continue_:
         //     this.ccontinue(s);
         //     break;
+        // case Quit_:
+        // case Exit_:
+        //     out("return $loc;");
+        //     break;
+        // case Delete_:
+        //     this.vseqexpr(s.targets);
+        //     break;
         default:
             return {"trans" : undefined, "didReturn" : false };
     }
-	console.log(s);
-	console.log("Wow");
 };
 
 function astForStmt(a,b){if(b.type===SYM.stmt){goog.asserts.assert(NCH(b)===1);b=CHILD(b,0)}if(b.type===SYM.simple_stmt){goog.asserts.assert(numStmts(b)===1);b=CHILD(b,0)}if(b.type===SYM.small_stmt){REQ(b,SYM.small_stmt);b=CHILD(b,0);switch(b.type){case SYM.expr_stmt:return astForExprStmt(a,b);case SYM.print_stmt:return astForPrintStmt(a,b);case SYM.del_stmt:return astForDelStmt(a,b);case SYM.pass_stmt:return new Pass(b.lineno,b.col_offset);case SYM.flow_stmt:return astForFlowStmt(a,b);case SYM.import_stmt:return astForImportStmt(a,
 b);case SYM.global_stmt:return astForGlobalStmt(a,b);case SYM.exec_stmt:return astForExecStmt(a,b);case SYM.assert_stmt:return astForAssertStmt(a,b);default:goog.asserts.fail("unhandled small_stmt")}}else{var c=CHILD(b,0);REQ(b,SYM.compound_stmt);switch(c.type){case SYM.if_stmt:return astForIfStmt(a,c);case SYM.while_stmt:return astForWhileStmt(a,c);case SYM.for_stmt:return astForForStmt(a,c);case SYM.try_stmt:return astForTryStmt(a,c);case SYM.with_stmt:return astForWithStmt(a,c);case SYM.funcdef:return astForFuncdef(a,
 c,[]);case SYM.classdef:return astForClassdef(a,c,[]);case SYM.decorated:return astForDecorated(a,c);default:goog.asserts.assert("unhandled compound_stmt")}}}
 Sk.astFromParse=function(a,b){var c=new Compiling("utf-8",b),d=[],e,f=0;switch(a.type){case SYM.file_input:for(var g=0;g<NCH(a)-1;++g){e=CHILD(a,g);if(a.type!==TOK.T_NEWLINE){REQ(e,SYM.stmt);var h=numStmts(e);if(h===1)d[f++]=astForStmt(c,e);else{e=CHILD(e,0);REQ(e,SYM.simple_stmt);for(var i=0;i<h;++i)d[f++]=astForStmt(c,CHILD(e,i*2))}}}
-// console.log("BEGIN")
-// console.log(d);
 var w = new Module(d);
-// console.log(w);
-// console.log(d);
-// console.log("LOOPING")
-// for (var i = 0; i < d.length; i++) {
-// 	console.log(translateStmt(d[i]));
-// }
 return w;case SYM.eval_input:goog.asserts.fail("todo;");case SYM.single_input:goog.asserts.fail("todo;");default:goog.asserts.fail("todo;")}};
 Sk.astDump=function(a){var b=function(d){for(var e="",f=0;f<d;++f)e+=" ";return e},c=function(d,e){if(d===null)return e+"None";else if(d.prototype&&d.prototype._astname!==undefined&&d.prototype._isenum)return e+d.prototype._astname+"()";else if(d._astname!==undefined){for(var f=b(d._astname.length+1),g=[],h=0;h<d._fields.length;h+=2){var i=d._fields[h],j=d._fields[h+1](d),k=b(i.length+1);g.push([i,c(j,e+f+k)])}i=[];for(h=0;h<g.length;++h){j=g[h];i.push(j[0]+"="+j[1].replace(/^\s+/,""))}h=i.join(",\n"+
 e+f);return e+d._astname+"("+h+")"}else if(goog.isArrayLike(d)){f=[];for(h=0;h<d.length;++h)f.push(c(d[h],e+" "));h=f.join(",\n");return e+"["+h.replace(/^\s+/,"")+"]"}else{h=d===true?"True":d===false?"False":d instanceof Sk.builtin.lng?d.tp$str().v:d instanceof Sk.builtin.str?d.$r().v:""+d;return e+h}};return c(a,"")};goog.exportSymbol("Sk.astFromParse",Sk.astFromParse);goog.exportSymbol("Sk.astDump",Sk.astDump);var DEF_GLOBAL=1,DEF_LOCAL=2,DEF_PARAM=4,USE=8,DEF_STAR=16,DEF_DOUBLESTAR=32,DEF_INTUPLE=64,DEF_FREE=128,DEF_FREE_GLOBAL=256,DEF_FREE_CLASS=512,DEF_IMPORT=1024,DEF_BOUND=DEF_LOCAL|DEF_PARAM|DEF_IMPORT,SCOPE_OFF=11,SCOPE_MASK=7,LOCAL=1,GLOBAL_EXPLICIT=2,GLOBAL_IMPLICIT=3,FREE=4,CELL=5,OPT_IMPORT_STAR=1,OPT_EXEC=2,OPT_BARE_EXEC=4,OPT_TOPLEVEL=8,GENERATOR=2,GENERATOR_EXPRESSION=2,ModuleBlock="module",FunctionBlock="function",ClassBlock="class";
@@ -2051,39 +1666,32 @@ Compiler.prototype.nameop=function(a,b,c){
 	if((b===Store||b===AugStore||b===Del)&&a.v==="__debug__")this.error("can not assign to __debug__");
 	if((b===Store||b===AugStore||b===Del)&&a.v==="None")this.error("can not assign to None");
 	if(a.v==="None")return"null";if(a.v==="True")return"true";if(a.v==="False")return"false";
-// console.log("In the compiler");
-// console.log(this.u);
-// console.log(this.u.private_);
 var d=mangleName(this.u.private_,a).v,e=OP_NAME,f=this.u.ste.getScope(d),g=null;
 switch(f){case FREE:g="$free";e=OP_DEREF;
-console.log("FREE COMPILER");break;
+break;
 case CELL:g="$cell";e=OP_DEREF;break;
 case LOCAL:
-console.log("LOCAL COMPILER");if(this.u.ste.blockType===
+if(this.u.ste.blockType===
 FunctionBlock&&!this.u.ste.generator)e=OP_FAST;break;
 case GLOBAL_IMPLICIT:
-console.log("IMPLICIT COMPILER");if(this.u.ste.blockType===FunctionBlock)e=OP_GLOBAL;break;
+if(this.u.ste.blockType===FunctionBlock)e=OP_GLOBAL;break;
 case GLOBAL_EXPLICIT:
-console.log("EXPLICIT COMPILER");
-e=OP_GLOBAL}d=fixReservedWords(d);goog.asserts.assert(f||a.v.charAt(1)==="_");a=d;if(this.u.ste.generator||this.u.ste.blockType!==FunctionBlock)d="$loc."+d;else if(e===OP_FAST||e===OP_NAME)this.u.localnames.push(d);
+	e=OP_GLOBAL}d=fixReservedWords(d);goog.asserts.assert(f||a.v.charAt(1)==="_");a=d;if(this.u.ste.generator||this.u.ste.blockType!==FunctionBlock)d="$loc."+d;else if(e===OP_FAST||e===OP_NAME)this.u.localnames.push(d);
 
 switch(e){case OP_FAST:switch(b){
 	case Load:
-	console.log("LOAD FREE COMPILER");
 	case Param:return d;
 	case Store:out(d,"=",c,";");break;
 	case Del:out("delete ",d,";");break;
 default:goog.asserts.fail("unhandled")}break;
 case OP_NAME:switch(b){
 	case Load:
-	console.log("LOAD NAME COMPILER");
 	b=this.gensym("loadname");out("var ",b,"=",d,"!==undefined?",d,":Sk.misceval.loadname('",a,"',$gbl);");return b;
 	case Store:out(d,"=",c,";");break;
 	case Del:out("delete ",d,";");break;
 	case Param:return d;default:goog.asserts.fail("unhandled")}break;
 case OP_GLOBAL:switch(b){
 	case Load:
-	console.log("LOAD GLOBAL COMPILER");
 	return this._gr("loadgbl","Sk.misceval.loadname('",a,"',$gbl)");
 	case Store:out("$gbl.",a,"=",c,";");break;
 	case Del:out("delete $gbl.",a);break;
@@ -2102,28 +1710,12 @@ Compiler.prototype.declareGlobals=function(globals)
 	return xml;
 }
 Compiler.prototype.cbody=function(a){
-	console.log("BEGIN");
-	console.log(a);
 	for(var b=0;b<a.length;++b) {
-		console.log("Hello");
-		// console.log(this.translateStmt(a[b]));
-		console.log(a[b]);
 		this.vstmt(a[b]);
 	}
-	console.log("STARTED");
-	console.log(this.u.ste.blockType);
-	console.log(a);
-	// It's top level
-	// Classes will be parsed normally
 	var	xml = { 'trans' : '' };
 	if (this.u.ste.blockType !== "class") { xml = this.transVseqstmt(a); }
-	
-	console.log("TOO MUCH");
-	console.log(xml);
-	console.log(xml.trans);
 	var finalXml = this.declareGlobals(this.globals) + xml.trans;
-	console.log(finalXml);
-	console.log("DONE");
 	return finalXml;
 };
 Compiler.prototype.cprint=function(a){goog.asserts.assert(a instanceof Print);a.dest&&this.vexpr(a.dest);for(var b=a.values.length,c=0;c<b;++c)out("Sk.misceval.print_(","new Sk.builtins['str'](",this.vexpr(a.values[c]),").v);");a.nl&&out("Sk.misceval.print_(",'"\\n");')};
@@ -2161,7 +1753,6 @@ Sk.importModuleInternal_=function(a,b,c,d){
 	if(h!==undefined)return f.length>1?Sk.sysmodules.mp$subscript(f[0]):h;
 	if(f.length>1){
 		g=f.slice(0,f.length-1).join(".");
-		console.log("NEXT 1");
 		e=Sk.importModuleInternal_(g,b)
 	}
 	h=new Sk.builtin.module;
@@ -2170,14 +1761,12 @@ Sk.importModuleInternal_=function(a,b,c,d){
 	var info;
 	if(d){
 		a=a+".py";
-		console.log("I FOUND IT 1");
 		i=Sk.compile(d,a,"exec")
 	} else if(d=Sk.importSearchPathForName(a,".js",true)){ 
 		a=d;
 		i={funcname:"$builtinmodule",code:Sk.read(a)}
 	} else {
 		a=Sk.importSearchPathForName(a,".py");
-		console.log("I FOUND IT 2");
 		i=Sk.compile(Sk.read(a),a,"exec")
 	} 
 	a=h.$js=i.code;
@@ -2195,29 +1784,18 @@ Sk.importModuleInternal_=function(a,b,c,d){
 		Sk.debugout(a)
 	}
 	a+="\n"+i.funcname+"("+("new Sk.builtin.str('"+c+"')")+");";
-	// console.log("THE BUG");
-	// console.log(a);
-	// console.log(c);
-	// b=goog.global.eval(a);
-	// b.__name__||(b.__name__=new Sk.builtin.str(c));
-	// h.$d=b;
 	if(e){
 		Sk.sysmodules.mp$subscript(g).tp$setattr(f[f.length-1],h);
 		return e
 	}
 	
-	console.log(i);
 	return { 'original' : h, 'xml' : i['xml'], 'yo' : 8 };
 };
 Sk.importModule=function(a,b){
-	console.log("NEXT 2");
 	return Sk.importModuleInternal_(a,b)};Sk.importMain=function(a,b){Sk.dateSet=false;Sk.filesLoaded=false;Sk.sysmodules=new Sk.builtin.dict([]);Sk.realsyspath=undefined;
-			console.log("NEXT 3");
 		return Sk.importModuleInternal_(a,b,"__main__")};
 Sk.importMainWithBody=function(a,b,c){Sk.dateSet=false;Sk.filesLoaded=false;Sk.sysmodules=new Sk.builtin.dict([]);Sk.realsyspath=undefined;
-		console.log("NEXT 4");
 	return Sk.importModuleInternal_(a,b,"__main__",c)};Sk.builtin.__import__=function(a,b,c,d){
-			console.log("NEXT 5");
 		b=Sk.importModuleInternal_(a);if(!d||d.length===0)return b;b=Sk.sysmodules.mp$subscript(a);goog.asserts.assert(b);return b};goog.exportSymbol("Sk.importMain",Sk.importMain);goog.exportSymbol("Sk.importMainWithBody",Sk.importMainWithBody);
 goog.exportSymbol("Sk.builtin.__import__",Sk.builtin.__import__);Sk.builtins={range:Sk.builtin.range,len:Sk.builtin.len,min:Sk.builtin.min,max:Sk.builtin.max,sum:Sk.builtin.sum,abs:Sk.builtin.abs,fabs:Sk.builtin.abs,round:Sk.builtin.round,ord:Sk.builtin.ord,chr:Sk.builtin.chr,hex:Sk.builtin.hex,oct:Sk.builtin.oct,bin:Sk.builtin.bin,dir:Sk.builtin.dir,repr:Sk.builtin.repr,open:Sk.builtin.open,isinstance:Sk.builtin.isinstance,hash:Sk.builtin.hash,getattr:Sk.builtin.getattr,float_$rw$:Sk.builtin.float_,int_$rw$:Sk.builtin.int_,AttributeError:Sk.builtin.AttributeError,
 ValueError:Sk.builtin.ValueError,Exception:Sk.builtin.Exception,ZeroDivisionError:Sk.builtin.ZeroDivisionError,AssertionError:Sk.builtin.AssertionError,ImportError:Sk.builtin.ImportError,IndentationError:Sk.builtin.IndentationError,IndexError:Sk.builtin.IndexError,KeyError:Sk.builtin.KeyError,TypeError:Sk.builtin.TypeError,NameError:Sk.builtin.NameError,IOError:Sk.builtin.IOError,NotImplementedError:Sk.builtin.NotImplementedError,dict:Sk.builtin.dict,file:Sk.builtin.file,"function":Sk.builtin.func,
